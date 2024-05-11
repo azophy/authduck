@@ -7,7 +7,10 @@ import (
 )
 
 func TokenHandler(c echo.Context) error {
+    formParams, _ := c.FormParams()
 		return c.JSON(http.StatusOK, map[string]interface{}{
-      "params": c.Request().URL.Query(),
+      "params": formParams,
+      "id_token": "oiiweiow",
+      "access_token": "klsdjflksd",
     })
 }

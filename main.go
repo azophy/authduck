@@ -15,7 +15,7 @@ func main() {
 
 	//e.GET("/auth/callback", CallbackHandler)
   e.File("/auth/callback", "resources/pages/callback.html")
-	e.GET("/auth/token", TokenHandler)
+	e.POST("/auth/token", TokenHandler)
 
 	e.Logger.Fatal(e.Start(":3000"))
 }

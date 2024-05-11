@@ -27,9 +27,10 @@
         </figure>
         <h1>Callback Endpoint</h1>
         <p>
-          This is the <strong>callback</strong> page of Authduck. This is the details of request made to this page:</p>
-        <code id="code">
-        </code>
+        This is the <strong>callback</strong> page of Authduck. Usually this page is accessed when the OIDC client initiating the authorization code flow.</p>
+
+        <h2>Request</h2>
+        <p>This is the details of request made to this page:</p>
         <table>
           <thead>
             <tr>
@@ -37,8 +38,24 @@
               <th>Value</th>
             </tr>
           </thead>
-          <tbody id="query-table"></tbody>
+          <tbody id="request-params-table"></tbody>
         </table>
+
+        <h2>Callback Payload</h2>
+        <p>This is the details of payload which would be used as callback query params:</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody id="callback-payload-table">
+          </tbody>
+        </table>
+
+        <button type="button" onclick="redirectToCallback()">Return to client</button>
+
       </article>
       <footer>
         <nav>
@@ -53,16 +70,47 @@
     </section>
   </body>
   <script>
+    // ref: https://cheatsheets.zip/generate-a-random-string-with-given-length
+    const generateString = length => Array(length).fill('').map((v) => Math.random().toString(36).charAt(2)).join('')
+
     const queryParams = new URLSearchParams(window.location.search)
-    const queryTable = document.getElementById('query-table')
+    const requestParamTable = document.getElementById('request-params-table')
+    const callbackPayloadTable = document.getElementById('callback-payload-table')
+    const callbackCode = generateString(20)
 
     Array.from(queryParams.entries()).map(
-      row => queryTable.innerHTML += `
+      row => requestParamTable.innerHTML += `
           <tr>
             <td>${row[0]}</td>
             <td>${row[1]}</td>
           </tr>
       `
     )
+
+    callbackPayloadTable.innerHTML += `
+          <tr>
+            <td>callback url</td>
+            <td>${queryParams.get('redirect_uri')}</td>
+          </tr>
+          <tr>
+            <td>state</td>
+            <td>${queryParams.get('state')}</td>
+          </tr>
+          <tr>
+            <td>code</td>
+            <td>${callbackCode}</td>
+          </tr>
+    `
+
+    function redirectToCallback() {
+      let finalCallbackUrl = new URL(queryParams.get('redirect_uri'))
+
+      finalCallbackUrl.searchParams.set('state', queryParams.get('state'))
+      finalCallbackUrl.searchParams.set('code', callbackCode)
+
+      if (window.confirm(`Are you sure you want to redirect to ${finalCallbackUrl} ?`)) {
+        window.location = finalCallbackUrl
+      }
+    }
   </script>
 </html>
