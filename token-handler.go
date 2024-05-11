@@ -4,7 +4,7 @@ import (
   "log"
   "time"
   "net/http"
-  //"math/rand"
+  "math/rand"
 
 	"github.com/labstack/echo/v4"
   "github.com/lestrrat-go/jwx/v2/jwa"
@@ -21,7 +21,8 @@ func TokenHandler(c echo.Context) error {
     }
     //randomIndex := rand.Intn(len(algs))
     //log.Printf("random index: %v\n", randomIndex)
-    alg := algs[2]
+    //alg := algs[2]
+    alg := algs[ rand.Intn(len(algs)) ]
     log.Printf("selected alg: %v\n", alg)
 
     expireDuration,_ := time.ParseDuration("1h")

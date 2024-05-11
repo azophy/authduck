@@ -25,8 +25,9 @@ var (
 )
 
 func GenerateSigningKeys() {
+  var err error
   log.Println("generating RSA private key...")
-  RSAPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+  RSAPrivateKey, err = rsa.GenerateKey(rand.Reader, 2048)
   if err != nil {
     log.Printf("failed to generate private key: %s", err)
     return
@@ -39,7 +40,7 @@ func GenerateSigningKeys() {
   }
 
   log.Println("generating EC private key...")
-  ECPrivateKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+  ECPrivateKey, err = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
   if err != nil {
     log.Printf("failed to generate new ECDSA private key: %s\n", err)
     return
