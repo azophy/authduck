@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="keywords" content="css, html5, css framework"/>
+    <meta name="description" content="OpenID Connect Server Playground for Development & Learning"/>
+    <link rel="stylesheet" href="/assets/tacit.min.css"/>
+    <title>Authduck</title>
+    <link rel="icon" type="image/png" href="/assets/logo.png"/>
+  </head>
+  <body>
+    <section>
+      <header>
+        <nav>
+          <ul>
+            <li><a href=".">home</a></li>
+            <li><a href=".">about</a></li>
+            <li><a href=".">projects</a></li>
+            <li><a href=".">talks</a></li>
+          </ul>
+        </nav>
+      </header>
+      <article>
+        <figure>
+          <img src="./tacit_logo.png" alt="tacit logo" style="max-height: 100px;"/>
+        </figure>
+        <h1>Callback Endpoint</h1>
+        <p>
+          This is the <strong>callback</strong> page of Authduck. This is the details of request made to this page:</p>
+        <code id="code">
+        </code>
+        <table>
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody id="query-table"></tbody>
+        </table>
+      </article>
+      <footer>
+        <nav>
+          <ul>
+            <li>
+              <small>Made by <a target="_blank" href="https://abdurrahman.adianto.id">azophy</a>, 2024</small>
+            </li>
+            <li>Styled using <small><a href="https://github.com/yegor256/tacit">tacit</a></small></li>
+          </ul>
+        </nav>
+      </footer>
+    </section>
+  </body>
+  <script>
+    const queryParams = new URLSearchParams(window.location.search)
+    const queryTable = document.getElementById('query-table')
+
+    Array.from(queryParams.entries()).map(
+      row => queryTable.innerHTML += `
+          <tr>
+            <td>${row[0]}</td>
+            <td>${row[1]}</td>
+          </tr>
+      `
+    )
+  </script>
+</html>

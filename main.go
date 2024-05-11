@@ -13,5 +13,9 @@ func main() {
 
 	e.GET("/.well-known/openid-configuration", OpenidconfigHandler)
 
+	//e.GET("/auth/callback", CallbackHandler)
+  e.File("/auth/callback", "resources/pages/callback.html")
+	e.GET("/auth/token", TokenHandler)
+
 	e.Logger.Fatal(e.Start(":3000"))
 }

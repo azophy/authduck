@@ -9,24 +9,24 @@ import (
 func OpenidconfigHandler(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]interface{}{
       "issuer": BaseUrl + "/realms/ssojabar",
-      "authorization_endpoint": BaseUrl + "/protocol/openid-connect/auth",
-      "token_endpoint": BaseUrl + "/protocol/openid-connect/token",
-      "introspection_endpoint": BaseUrl + "/protocol/openid-connect/token/introspect",
-      "userinfo_endpoint": BaseUrl + "/protocol/openid-connect/userinfo",
-      "end_session_endpoint": BaseUrl + "/protocol/openid-connect/logout",
+      "authorization_endpoint": BaseUrl + "/auth/callback",
+      "token_endpoint": BaseUrl + "/auth/token",
+      "introspection_endpoint": BaseUrl + "/auth/introspect",
+      "userinfo_endpoint": BaseUrl + "/auth/userinfo",
+      "end_session_endpoint": BaseUrl + "/auth/logout",
       //"frontchannel_logout_session_supported": true,
       //"frontchannel_logout_supported": true,
-      //"jwks_uri": BaseUrl + "/protocol/openid-connect/certs",
+      "jwks_uri": BaseUrl + "/auth/certs",
       //"check_session_iframe": BaseUrl + "/protocol/openid-connect/login-status-iframe.html",
-      //"grant_types_supported": []string{
-        //"authorization_code",
+      "grant_types_supported": []string{
+        "authorization_code",
         //"implicit",
         //"refresh_token",
         //"password",
         //"client_credentials",
         //"urn:ietf:params:oauth:grant-type:device_code",
         //"urn:openid:params:grant-type:ciba",
-      //},
+      },
       //"response_types_supported": []string{
         //"code",
         //"none",
