@@ -7,18 +7,17 @@ import (
 )
 
 func OpenidconfigHandler(c echo.Context) error {
-    const baseUrl = "https://example.com"
 		return c.JSON(http.StatusOK, map[string]interface{}{
-      "issuer": baseUrl + "/realms/ssojabar",
-      "authorization_endpoint": baseUrl + "/protocol/openid-connect/auth",
-      "token_endpoint": baseUrl + "/protocol/openid-connect/token",
-      "introspection_endpoint": baseUrl + "/protocol/openid-connect/token/introspect",
-      "userinfo_endpoint": baseUrl + "/protocol/openid-connect/userinfo",
-      "end_session_endpoint": baseUrl + "/protocol/openid-connect/logout",
+      "issuer": BaseUrl + "/realms/ssojabar",
+      "authorization_endpoint": BaseUrl + "/protocol/openid-connect/auth",
+      "token_endpoint": BaseUrl + "/protocol/openid-connect/token",
+      "introspection_endpoint": BaseUrl + "/protocol/openid-connect/token/introspect",
+      "userinfo_endpoint": BaseUrl + "/protocol/openid-connect/userinfo",
+      "end_session_endpoint": BaseUrl + "/protocol/openid-connect/logout",
       //"frontchannel_logout_session_supported": true,
       //"frontchannel_logout_supported": true,
-      //"jwks_uri": baseUrl + "/protocol/openid-connect/certs",
-      //"check_session_iframe": baseUrl + "/protocol/openid-connect/login-status-iframe.html",
+      //"jwks_uri": BaseUrl + "/protocol/openid-connect/certs",
+      //"check_session_iframe": BaseUrl + "/protocol/openid-connect/login-status-iframe.html",
       //"grant_types_supported": []string{
         //"authorization_code",
         //"implicit",
