@@ -16,7 +16,7 @@ func OpenidconfigHandler(c echo.Context) error {
       "end_session_endpoint": BaseUrl + "/auth/logout",
       //"frontchannel_logout_session_supported": true,
       //"frontchannel_logout_supported": true,
-      "jwks_uri": BaseUrl + "/auth/certs",
+      "jwks_uri": BaseUrl + "/.well-known/certs",
       //"check_session_iframe": BaseUrl + "/protocol/openid-connect/login-status-iframe.html",
       "grant_types_supported": []string{
         "authorization_code",
