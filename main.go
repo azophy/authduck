@@ -7,6 +7,7 @@ import (
 )
 
 func main() {
+  APP_PORT := GetEnvOrDefault("APP_PORT", "3000")
   GenerateSigningKeys()
 
 	e := echo.New()
@@ -22,5 +23,5 @@ func main() {
   e.File("/auth/callback", "resources/pages/callback.html")
 	e.POST("/auth/token", TokenHandler)
 
-	e.Logger.Fatal(e.Start(":3000"))
+	e.Logger.Fatal(e.Start(":" + APP_PORT))
 }
