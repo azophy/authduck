@@ -1,8 +1,6 @@
 package main
 
 import (
-  "os"
-  "log"
 	"embed"
 	"io/fs"
 	"net/http"
@@ -18,15 +16,9 @@ func main() {
   GenerateSigningKeys()
 	e := echo.New()
 
-  assetHandler := http.FileServer(getFileSystem(false))
-	//e.GET("/", echo.WrapHandler(http.StripPrefix("/pages/", assetHandler)))
-	e.GET("/", echo.WrapHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    http.ServeFileFS(w, r, embededFiles, "resources/pages/index.html")
-  })))
-	e.GET("/assets/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))
-
-	//e.File("/", "resources/pages/index.html")
-	//e.Static("/assets", "resources/assets")
+  assetHandler := http.FileServer(getFileSystem())
+	e.GET("/", serveEmbededFile("resources/pages/index.html"))
+	e.GET("/assets/*", echo.WrapHandler(assetHandler))
 
 	e.GET("/.well-known/certs", func (c echo.Context) error {
 		return c.JSON(http.StatusOK, PublicJWKS)
@@ -37,13 +29,13 @@ func main() {
 	e.Logger.Fatal(e.Start(":" + APP_PORT))
 }
 
-func getFileSystem(useOS bool) http.FileSystem {
-	if useOS {
-		log.Print("using live mode")
-		return http.FS(os.DirFS("resources"))
-	}
+func serveEmbededFile(path string) echo.HandlerFunc {
+  return echo.WrapHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    http.ServeFileFS(w, r, embededFiles, path)
+  }))
+}
 
-	log.Print("using embed mode")
+func getFileSystem() http.FileSystem {
 	fsys, err := fs.Sub(embededFiles, "resources")
 	if err != nil {
 		panic(err)
