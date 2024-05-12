@@ -14,14 +14,11 @@ func main() {
 	e.File("/", "resources/pages/index.html")
 	e.Static("/assets", "resources/assets")
 
-	e.GET("/.well-known/openid-configuration", OpenidconfigHandler)
 	e.GET("/.well-known/certs", func (c echo.Context) error {
 		return c.JSON(http.StatusOK, PublicJWKS)
   })
 
-	//e.GET("/auth/callback", CallbackHandler)
-  e.File("/auth/callback", "resources/pages/callback.html")
-	e.POST("/auth/token", TokenHandler)
+  GeneralOAuthModuleInit(e)
 
 	e.Logger.Fatal(e.Start(":" + APP_PORT))
 }

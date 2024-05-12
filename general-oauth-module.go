@@ -1,19 +1,38 @@
 package main
 
 import (
+  "log"
+  "time"
   "net/http"
+  "math/rand"
 
 	"github.com/labstack/echo/v4"
+  "github.com/lestrrat-go/jwx/v2/jwa"
+  "github.com/lestrrat-go/jwx/v2/jwt"
+  "github.com/lestrrat-go/jwx/v2/jwt/openid"
 )
 
-func OpenidconfigHandler(c echo.Context) error {
+const (
+  routeParent = "/case/general"
+)
+
+func GeneralOAuthModuleInit(app *echo.Echo) {
+  e := app.Group(routeParent)
+
+	e.GET("/.well-known/openid-configuration", openidconfigHandler)
+	//e.GET("/auth/callback", CallbackHandler)
+  e.File("/auth/callback", "resources/pages/callback.html")
+	e.POST("/auth/token", tokenHandler)
+}
+
+func openidconfigHandler(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]interface{}{
-      "issuer": BaseUrl + "/realms/ssojabar",
-      "authorization_endpoint": BaseUrl + "/auth/callback",
-      "token_endpoint": BaseUrl + "/auth/token",
-      "introspection_endpoint": BaseUrl + "/auth/introspect",
-      "userinfo_endpoint": BaseUrl + "/auth/userinfo",
-      "end_session_endpoint": BaseUrl + "/auth/logout",
+      "issuer": BaseUrl,
+      "authorization_endpoint": BaseUrl + routeParent + "/auth/callback",
+      "token_endpoint": BaseUrl + routeParent + "/auth/token",
+      "introspection_endpoint": BaseUrl + routeParent + "/auth/introspect",
+      "userinfo_endpoint": BaseUrl + routeParent + "/auth/userinfo",
+      "end_session_endpoint": BaseUrl + routeParent + "/auth/logout",
       //"frontchannel_logout_session_supported": true,
       //"frontchannel_logout_supported": true,
       "jwks_uri": BaseUrl + "/.well-known/certs",
@@ -279,5 +298,55 @@ func OpenidconfigHandler(c echo.Context) error {
         //"pushed_authorization_request_endpoint": "https://example.com/protocol/openid-connect/ext/par/request",
         //"backchannel_authentication_endpoint": "https://example.com/protocol/openid-connect/ext/ciba/auth",
       //},
+    })
+}
+
+func tokenHandler(c echo.Context) error {
+    formParams, _ := c.FormParams()
+
+    // select random alg among available ones for JWT
+    algs := []jwa.SignatureAlgorithm{
+      jwa.RS256,
+      jwa.ES384,
+      jwa.EdDSA,
+    }
+    alg := algs[ rand.Intn(len(algs)) ]
+    log.Printf("selected alg: %v\n", alg)
+
+    expireDuration,_ := time.ParseDuration("1h")
+
+    accessToken := jwt.New()
+    accessToken.Set(jwt.SubjectKey, c.FormValue("code"))
+    accessToken.Set(jwt.IssuerKey, BaseUrl)
+    accessToken.Set(jwt.AudienceKey, `Golang Users`)
+    accessToken.Set(jwt.IssuedAtKey, time.Now())
+    accessToken.Set(jwt.ExpirationKey, time.Now().Add(expireDuration))
+    accessToken.Set(`code`, c.FormValue("code"))
+
+    idToken := openid.New()
+    idToken.Set(jwt.SubjectKey, c.FormValue("code"))
+    idToken.Set(jwt.IssuerKey, BaseUrl)
+    idToken.Set(jwt.AudienceKey, `Golang Users`)
+    idToken.Set(openid.NameKey, `John Doe`)
+    idToken.Set(jwt.IssuedAtKey, time.Now())
+    idToken.Set(jwt.ExpirationKey, time.Now().Add(expireDuration))
+    idToken.Set(`code`, c.FormValue("code"))
+
+    finalIdToken, err := CreateJWT(alg, idToken)
+    if err != nil {
+      log.Printf("error signing Id Token: %s\n", err)
+      return err
+    }
+
+    finalAccessToken, err := CreateJWT(alg, accessToken)
+    if err != nil {
+      log.Printf("error signing Access Token: %s\n", err)
+      return err
+    }
+
+		return c.JSON(http.StatusOK, map[string]interface{}{
+      "params": formParams,
+      "id_token": string(finalIdToken),
+      "access_token": string(finalAccessToken),
     })
 }
