@@ -17,8 +17,10 @@ import (
 
 var (
   BaseUrl = GetEnvOrDefault("BASE_URL", "http://localhost:3000")
-  PublicJWKS = jwk.NewSet()
 
+  HistoryRepository = NewHistoryModel("./db.sqlite3")
+
+  PublicJWKS = jwk.NewSet()
   RSAPrivateKey *rsa.PrivateKey
   ECPrivateKey *ecdsa.PrivateKey
   EDPrivateKey ed25519.PrivateKey
@@ -92,3 +94,13 @@ func GetEnvOrDefault(varName string, defaultValue string) string {
     return defaultValue
   }
 }
+
+func HistoryRecorderMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+  return func(c echo.Context) error {
+    clientId := c.FormParam("client_id")
+    data := json.marshall(c.FormParams())
+    HistoryRepository.Record(clientId, data)
+    return next(c)
+  }
+}
+

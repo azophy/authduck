@@ -24,6 +24,11 @@ func main() {
 		return c.JSON(http.StatusOK, PublicJWKS)
   })
 
+  e.GET("/manage/history/:client_id/:from", func (c echo.Context) error {
+    clientId := c.Param("client_id")
+    from := c.Param("from")
+    return c.JSON(http.StatusOK, HistoryRepository.All(clientId, from))
+  })
   GeneralOAuthModuleInit(e)
 
 	e.Logger.Fatal(e.Start(":" + APP_PORT))
