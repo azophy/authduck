@@ -16,7 +16,7 @@ const (
   routeParent = "/case/general"
 )
 
-func GeneralOAuthModuleInit(app *echo.Echo) {
+func RegisterGeneralOAuthModule(app *echo.Echo) {
   e := app.Group(routeParent)
 
 	e.GET("/.well-known/openid-configuration", openidconfigHandler)
