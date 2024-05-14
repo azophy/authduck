@@ -22,6 +22,15 @@ func setupTestDB(t *testing.T) *HistoryModel {
 	return model
 }
 
+func TestHistoryModelMigrate(t *testing.T) {
+	model := setupTestDB(t)
+
+	err := model.Migrate()
+	if err != nil {
+		t.Errorf("migration produced an error: %v", err)
+	}
+}
+
 func TestHistoryModelRecord(t *testing.T) {
 	model := setupTestDB(t)
 
@@ -56,14 +65,5 @@ func TestHistoryModelAll(t *testing.T) {
 	}
 	if len(histories) != 5 {
 		t.Errorf("expected 5 records for client1, got %d", len(histories))
-	}
-}
-
-func TestHistoryModelMigrate(t *testing.T) {
-	model := setupTestDB(t)
-
-	err := model.Migrate()
-	if err != nil {
-		t.Errorf("migration produced an error: %v", err)
 	}
 }

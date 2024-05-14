@@ -2,7 +2,6 @@
 package main
 
 import (
-  "log"
   "database/sql"
   //"errors"
 
@@ -26,10 +25,10 @@ type HistoryModel struct {
   db *sql.DB
 }
 
-func NewHistoryModel(path string) *HistoryModel {
+func NewHistoryModel(path string) (*HistoryModel, error) {
   db, err := sql.Open("sqlite3", path)
   if err != nil {
-    log.Fatal(err)
+    return nil, err
   }
 
   newInstance :=  &HistoryModel{
@@ -37,7 +36,7 @@ func NewHistoryModel(path string) *HistoryModel {
   }
 
   newInstance.Migrate()
-  return newInstance
+  return newInstance, nil
 }
 
 func (r *HistoryModel) Migrate() error {
