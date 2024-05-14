@@ -10,7 +10,6 @@ import (
   "crypto/ed25519"
   "crypto/elliptic"
 
-	"github.com/labstack/echo/v4"
   "github.com/lestrrat-go/jwx/v2/jwa"
   "github.com/lestrrat-go/jwx/v2/jwk"
   "github.com/lestrrat-go/jwx/v2/jwt"

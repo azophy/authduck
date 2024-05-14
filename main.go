@@ -4,8 +4,10 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
+  "encoding/json"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 //go:embed resources
@@ -34,7 +36,11 @@ func main() {
   e.GET("/manage/history/:client_id/:from", func (c echo.Context) error {
     clientId := c.Param("client_id")
     from := c.Param("from")
-    return c.JSON(http.StatusOK, HistoryRepository.All(clientId, from))
+    histories, err := HistoryRepository.All(clientId, from)
+    if err != nil {
+      return err
+    }
+    return c.JSON(http.StatusOK, histories)
   })
   RegisterGeneralOAuthModule(e)
 
@@ -60,7 +66,7 @@ func HistoryRecorderMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
   return func(c echo.Context) error {
     var clientId string
 
-    if v := c.Get("basic-auth-username"); v != "" {
+    if v := c.Get("basic-auth-username").(string); v != "" {
       clientId = v
     }
     if v := c.QueryParam("client_id"); v != "" {
@@ -78,14 +84,17 @@ func HistoryRecorderMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
         headers[name] = values[0]
       }
 
+      formParams, _ := c.FormParams()
+
       data := map[string]interface{}{
         "http_method": c.Request().Method,
         "url": c.Request().URL.String(),
         "headers": headers,
-        "form_params": c.FormParams(),
-        "query_params": c.queryParams(),
+        "form_params": formParams,
+        "query_params": c.QueryParams(),
       }
-      HistoryRepository.Record(clientId, data)
+      bytes, _ := json.Marshal(data)
+      HistoryRepository.Record(clientId, string(bytes))
     }
 
     return next(c)

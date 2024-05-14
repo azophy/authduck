@@ -44,9 +44,9 @@ func (r *HistoryModel) Migrate() error {
   query := `
     CREATE TABLE IF NOT EXISTS history(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      timestamp TIMESTAMP default NOW()
+      timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       client_id TEXT NOT NULL,
-      data TEXT NOT NULL,
+      data TEXT NOT NULL
     );
   `
 
@@ -55,7 +55,7 @@ func (r *HistoryModel) Migrate() error {
 }
 
 func (r *HistoryModel) Record(clientId, data string) error {
-  _, err := r.db.Exec("INSERT INTO history(client_id, data) values(?)",clientId, data)
+  _, err := r.db.Exec("INSERT INTO history(client_id, data) values(?, ?)",clientId, data)
   if err != nil {
     return err
   }
@@ -64,7 +64,7 @@ func (r *HistoryModel) Record(clientId, data string) error {
 }
 
 func (r *HistoryModel) All(clientId string, from string) ([]History, error) {
-  rows, err := r.db.Query("SELECT * FROM history WHERE client_id = ? ORDER BY timestamp LIMIT 10 OFFSET ?", clientId, from)
+  rows, err := r.db.Query("SELECT * FROM history WHERE client_id = ? ORDER BY timestamp DESC LIMIT 10 OFFSET ?", clientId, from)
   if err != nil {
     return nil, err
   }
