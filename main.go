@@ -58,7 +58,7 @@ func getFileSystem() http.FileSystem {
 
 func HistoryRecorderMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
   return func(c echo.Context) error {
-    clientId := "-"
+    var clientId string
 
     if v := c.Get("basic-auth-username"); v != "" {
       clientId = v
@@ -70,21 +70,24 @@ func HistoryRecorderMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
       clientId = v
     }
 
-    // Get request headers
-    headers := make(map[string]string)
-    for name, values := range c.Request().Header {
-      // Combine multiple values for the same header into a single string
-      headers[name] = values[0]
+    if (clientId != "") {
+      // Get request headers
+      headers := make(map[string]string)
+      for name, values := range c.Request().Header {
+        // Combine multiple values for the same header into a single string
+        headers[name] = values[0]
+      }
+
+      data := map[string]interface{}{
+        "http_method": c.Request().Method,
+        "url": c.Request().URL.String(),
+        "headers": headers,
+        "form_params": c.FormParams(),
+        "query_params": c.queryParams(),
+      }
+      HistoryRepository.Record(clientId, data)
     }
 
-    data := map[string]interface{}{
-      "http_method": c.Request().Method,
-      "url": c.Request().URL.String(),
-      "headers": headers,
-      "form_params": c.FormParams(),
-      "query_params": c.queryParams(),
-    }
-    HistoryRepository.Record(clientId, data)
     return next(c)
   }
 }
