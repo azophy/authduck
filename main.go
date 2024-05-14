@@ -16,6 +16,13 @@ func main() {
   GenerateSigningKeys()
 	e := echo.New()
 
+  e.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
+    c.Set("basic-auth-username", username)
+    c.Set("basic-auth-password", password)
+    return true, nil
+  }))
+  e.Use(HistoryRecorderMiddleware)
+
   assetHandler := http.FileServer(getFileSystem())
 	e.GET("/", serveEmbededFile("resources/pages/index.html"))
 	e.GET("/assets/*", echo.WrapHandler(assetHandler))
@@ -29,7 +36,7 @@ func main() {
     from := c.Param("from")
     return c.JSON(http.StatusOK, HistoryRepository.All(clientId, from))
   })
-  GeneralOAuthModuleInit(e)
+  RegisterGeneralOAuthModule(e)
 
 	e.Logger.Fatal(e.Start(":" + APP_PORT))
 }
@@ -48,3 +55,37 @@ func getFileSystem() http.FileSystem {
 
 	return http.FS(fsys)
 }
+
+func HistoryRecorderMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+  return func(c echo.Context) error {
+    clientId := "-"
+
+    if v := c.Get("basic-auth-username"); v != "" {
+      clientId = v
+    }
+    if v := c.QueryParam("client_id"); v != "" {
+      clientId = v
+    }
+    if v := c.FormValue("client_id"); v != "" {
+      clientId = v
+    }
+
+    // Get request headers
+    headers := make(map[string]string)
+    for name, values := range c.Request().Header {
+      // Combine multiple values for the same header into a single string
+      headers[name] = values[0]
+    }
+
+    data := map[string]interface{}{
+      "http_method": c.Request().Method,
+      "url": c.Request().URL.String(),
+      "headers": headers,
+      "form_params": c.FormParams(),
+      "query_params": c.queryParams(),
+    }
+    HistoryRepository.Record(clientId, data)
+    return next(c)
+  }
+}
+

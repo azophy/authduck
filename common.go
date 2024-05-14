@@ -10,6 +10,7 @@ import (
   "crypto/ed25519"
   "crypto/elliptic"
 
+	"github.com/labstack/echo/v4"
   "github.com/lestrrat-go/jwx/v2/jwa"
   "github.com/lestrrat-go/jwx/v2/jwk"
   "github.com/lestrrat-go/jwx/v2/jwt"
@@ -94,13 +95,3 @@ func GetEnvOrDefault(varName string, defaultValue string) string {
     return defaultValue
   }
 }
-
-func HistoryRecorderMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-  return func(c echo.Context) error {
-    clientId := c.FormParam("client_id")
-    data := json.marshall(c.FormParams())
-    HistoryRepository.Record(clientId, data)
-    return next(c)
-  }
-}
-

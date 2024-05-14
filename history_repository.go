@@ -2,10 +2,11 @@
 package main
 
 import (
+  "log"
   "database/sql"
   //"errors"
 
-  "github.com/mattn/go-sqlite3"
+  _ "github.com/mattn/go-sqlite3"
 )
 
 // var (
@@ -14,7 +15,7 @@ import (
 // ErrUpdateFailed = errors.New("update failed")
 // ErrDeleteFailed = errors.New("delete failed")
 // )
-type History {
+type History struct {
   ID int
   Timestamp string
   ClientId string
