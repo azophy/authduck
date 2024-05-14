@@ -72,7 +72,7 @@ func (r *HistoryModel) All(clientId string, from string) ([]History, error) {
   var all []History
   for rows.Next() {
     var history History
-    if err := rows.Scan(&history.ID, &history.Timestamp , history.ClientId, &history.Data); err != nil {
+    if err := rows.Scan(&history.ID, &history.Timestamp, &history.ClientId, &history.Data); err != nil {
       return nil, err
     }
     all = append(all, history)

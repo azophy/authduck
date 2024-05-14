@@ -1,13 +1,15 @@
 package main
 
 import (
+  "log"
 	"embed"
 	"io/fs"
+  "strings"
 	"net/http"
   "encoding/json"
+  "encoding/base64"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
 
 //go:embed resources
@@ -15,15 +17,16 @@ var embededFiles embed.FS
 
 func main() {
   APP_PORT := GetEnvOrDefault("APP_PORT", "3000")
-  GenerateSigningKeys()
+  err := InitiateGlobalVars()
+  if err != nil {
+    log.Printf("failed initiating global vars: %s\n", err)
+    return
+  }
+
 	e := echo.New()
 
-  e.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
-    c.Set("basic-auth-username", username)
-    c.Set("basic-auth-password", password)
-    return true, nil
-  }))
-  e.Use(HistoryRecorderMiddleware)
+  e.Use(extractBasicAuthMiddleware)
+  e.Use(historyRecorderMiddleware)
 
   assetHandler := http.FileServer(getFileSystem())
 	e.GET("/", serveEmbededFile("resources/pages/index.html"))
@@ -62,12 +65,47 @@ func getFileSystem() http.FileSystem {
 	return http.FS(fsys)
 }
 
-func HistoryRecorderMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+func extractBasicAuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+  return func(c echo.Context) error {
+    // Get the Authorization header
+    authHeader := c.Request().Header.Get("Authorization")
+    if authHeader == "" {
+      return next(c)
+    }
+
+    // Check if the Authorization header starts with "Basic "
+    if !strings.HasPrefix(authHeader, "Basic ") {
+      return next(c)
+    }
+
+    // Decode the base64 part of the header
+    base64Credentials := strings.TrimPrefix(authHeader, "Basic ")
+    credentials, err := base64.StdEncoding.DecodeString(base64Credentials)
+    if err != nil {
+      return next(c)
+    }
+
+    // Split the credentials into username and password
+    creds := strings.SplitN(string(credentials), ":", 2)
+    if len(creds) != 2 {
+      return next(c)
+    }
+
+    c.Set("basic-auth-username", creds[0])
+    c.Set("basic-auth-password", creds[1])
+
+    return next(c)
+  }
+}
+
+
+
+func historyRecorderMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
   return func(c echo.Context) error {
     var clientId string
 
-    if v := c.Get("basic-auth-username").(string); v != "" {
-      clientId = v
+    if v := c.Get("basic-auth-username"); v != nil {
+      clientId = v.(string)
     }
     if v := c.QueryParam("client_id"); v != "" {
       clientId = v

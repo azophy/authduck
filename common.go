@@ -18,7 +18,7 @@ import (
 var (
   BaseUrl = GetEnvOrDefault("BASE_URL", "http://localhost:3000")
 
-  HistoryRepository = NewHistoryModel("./db.sqlite3")
+  HistoryRepository *HistoryModel
 
   PublicJWKS = jwk.NewSet()
   RSAPrivateKey *rsa.PrivateKey
@@ -26,26 +26,26 @@ var (
   EDPrivateKey ed25519.PrivateKey
 )
 
-func GenerateSigningKeys() {
+func InitiateGlobalVars() error {
   var err error
   log.Println("generating RSA private key...")
   RSAPrivateKey, err = rsa.GenerateKey(rand.Reader, 2048)
   if err != nil {
     log.Printf("failed to generate private key: %s", err)
-    return
+    return err
   }
   RSAPublicKey := RSAPrivateKey.Public()
   RSAPublicJWK, err := jwk.FromRaw(RSAPublicKey)
   if err != nil {
     log.Printf("failed to create RSA Public JWK: %s\n", err)
-    return
+    return err
   }
 
   log.Println("generating EC private key...")
   ECPrivateKey, err = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
   if err != nil {
     log.Printf("failed to generate new ECDSA private key: %s\n", err)
-    return
+    return err
   }
 
   ECPublicKey := ECPrivateKey.Public()
@@ -53,7 +53,7 @@ func GenerateSigningKeys() {
   ECPublicJWK, err := jwk.FromRaw(ECPublicKey)
   if err != nil {
     log.Printf("failed to create EC Public JWK: %s\n", err)
-    return
+    return err
   }
 
   log.Println("Generating ED25519 keypair...")
@@ -61,18 +61,27 @@ func GenerateSigningKeys() {
   EDPublicKey, EDPrivateKey, err = ed25519.GenerateKey(rand.Reader)
   if err != nil {
     log.Printf("failed to generate new ED25519 keypair: %s\n", err)
-    return
+    return err
   }
 
   EDPublicJWK, err := jwk.FromRaw(EDPublicKey)
   if err != nil {
     log.Printf("failed to create ED Public JWK: %s\n", err)
-    return
+    return err
   }
 
   _ = PublicJWKS.AddKey(RSAPublicJWK)
   _ = PublicJWKS.AddKey(ECPublicJWK)
   _ = PublicJWKS.AddKey(EDPublicJWK)
+
+  log.Println("setting up db")
+  HistoryRepository, err = NewHistoryModel("./db.sqlite3")
+  if err != nil {
+    log.Printf("failed to initiate HistoryModel: %s\n", err)
+    return err
+  }
+
+  return nil
 }
 
 func CreateJWT(alg jwa.SignatureAlgorithm, token jwt.Token) ([]byte, error) {
