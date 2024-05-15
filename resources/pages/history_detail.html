@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="keywords" content="css, html5, css framework"/>
+    <meta name="description" content="OpenID Connect Server Playground for Development & Learning"/>
+    <link rel="stylesheet" href="/assets/tacit.min.css"/>
+    <title>Authduck</title>
+    <link rel="icon" type="image/png" href="/assets/logo.png"/>
+    <script src="/assets/htmx.min.js"></script>
+  </head>
+  <body>
+    <section>
+      <header>
+        <nav>
+          <ul>
+            <li><a href=".">home</a></li>
+            <li><a href=".">about</a></li>
+            <li><a href=".">projects</a></li>
+            <li><a href=".">talks</a></li>
+          </ul>
+        </nav>
+      </header>
+      <article>
+        <figure>
+          <img src="./tacit_logo.png" alt="tacit logo" style="max-height: 100px;"/>
+        </figure>
+        <h1>History Detail</h1>
+
+        <div id="history-list" hx-get="/manage/history__" hx-trigger="load"></div>
+
+      </article>
+      <footer>
+        <nav>
+          <ul>
+            <li>
+              <small>Made by <a target="_blank" href="https://abdurrahman.adianto.id">azophy</a>, 2024</small>
+            </li>
+            <li>Styled using <small><a href="https://github.com/yegor256/tacit">tacit</a></small></li>
+          </ul>
+        </nav>
+      </footer>
+    </section>
+  </body>
+</html>

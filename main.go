@@ -1,10 +1,11 @@
 package main
 
 import (
-  "fmt"
+  "io"
   "log"
   "strings"
 	"net/http"
+  "html/template"
   "encoding/json"
   "encoding/base64"
 
@@ -31,42 +32,75 @@ func main() {
 		return c.JSON(http.StatusOK, PublicJWKS)
   })
 
-  e.GET("/manage/history/:client_id/:from", historyDetailHandler)
+  e.Renderer = NewTemplateRenderer()
+	e.GET("/manage/history", ServeResourceFile("resources/pages/history_detail.html"))
+  e.GET("/manage/history__", historyDetailHandler)
 
   RegisterGeneralOAuthModule(e)
 
 	e.Logger.Fatal(e.Start(":" + APP_PORT))
 }
 
+type Template struct {
+  templates *template.Template
+}
+
+// Render method to render the template string
+func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+  tmpl, err := template.New("htmlTemplate").Parse(name)
+  if err != nil {
+    return err
+  }
+  return tmpl.Execute(w, data)
+}
+
+func NewTemplateRenderer() *Template {
+  renderer := &Template{
+    templates: template.Must(template.New("T").Parse("")),
+  }
+
+  return renderer
+}
+
 func historyDetailHandler(c echo.Context) error {
-  clientId := c.Param("client_id")
-  from := c.Param("from")
+  clientId := c.QueryParam("client_id")
+  from := c.QueryParam("from")
   histories, err := HistoryRepository.All(clientId, from)
   if err != nil {
     return err
   }
 
-  var html strings.Builder
-  const templ = `
-    <tr>
-      <td>%v</td>
-      <td><pre>%v</pre></td>
-    </tr>
+  templ := `
+      <div id="history-list">
+        <for hx-get="/manage/history__" hx-target="history-list">
+          <label for="">client_id</label>
+          <input type="text">
+          <button type="submit">get</button>
+        </form>
+
+        <table>
+          <thead>
+            <tr>
+              <th>timestamp</th>
+              <th>data</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{ len . | le 0 }}
+            empty data
+            {{ else }} {{ range . }}
+              <tr>
+                <td>{{ .Timestamp }}</td>
+                <td><pre>
+                  {{ .Data }}
+                </pre></td>
+              </tr>
+            {{ end }} {{ end }}
+          </tbody>
+        </table>
+      </div>
   `
-  for _, history := range histories {
-    html.WriteString(fmt.Sprintf(templ, history.Timestamp, history.Data))
-  }
-  result := `
-    <table>
-      <thead>
-        <tr>
-          <th>timestamp</th>
-          <th>data</th>
-        </tr>
-      </thead>
-      <tbody>` + html.String() + `</tbody>
-    </table>`
-  return c.HTML(http.StatusOK, result)
+  return c.Render(http.StatusOK, templ, histories)
 }
 
 func extractBasicAuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
@@ -119,6 +153,8 @@ func historyRecorderMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
     }
 
     if (clientId != "") {
+      log.Printf("got client_id=%v\n", clientId)
+
       // Get request headers
       headers := make(map[string]string)
       for name, values := range c.Request().Header {
