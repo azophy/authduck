@@ -1,6 +1,7 @@
 package main
 
 import (
+  "fmt"
   "log"
   "strings"
 	"net/http"
@@ -30,18 +31,42 @@ func main() {
 		return c.JSON(http.StatusOK, PublicJWKS)
   })
 
-  e.GET("/manage/history/:client_id/:from", func (c echo.Context) error {
-    clientId := c.Param("client_id")
-    from := c.Param("from")
-    histories, err := HistoryRepository.All(clientId, from)
-    if err != nil {
-      return err
-    }
-    return c.JSON(http.StatusOK, histories)
-  })
+  e.GET("/manage/history/:client_id/:from", historyDetailHandler)
+
   RegisterGeneralOAuthModule(e)
 
 	e.Logger.Fatal(e.Start(":" + APP_PORT))
+}
+
+func historyDetailHandler(c echo.Context) error {
+  clientId := c.Param("client_id")
+  from := c.Param("from")
+  histories, err := HistoryRepository.All(clientId, from)
+  if err != nil {
+    return err
+  }
+
+  var html strings.Builder
+  const templ = `
+    <tr>
+      <td>%v</td>
+      <td><pre>%v</pre></td>
+    </tr>
+  `
+  for _, history := range histories {
+    html.WriteString(fmt.Sprintf(templ, history.Timestamp, history.Data))
+  }
+  result := `
+    <table>
+      <thead>
+        <tr>
+          <th>timestamp</th>
+          <th>data</th>
+        </tr>
+      </thead>
+      <tbody>` + html.String() + `</tbody>
+    </table>`
+  return c.HTML(http.StatusOK, result)
 }
 
 func extractBasicAuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {

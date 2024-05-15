@@ -29,6 +29,8 @@
         <p>
         This is the <strong>callback</strong> page of Authduck. Usually this page is accessed when the OIDC client initiating the authorization code flow.</p>
 
+        <a href="#" target="_blank" id="client_history_link">see client history</a>
+
         <h2>Request</h2>
         <p>This is the details of request made to this page:</p>
         <table>
@@ -101,6 +103,8 @@
             <td>${callbackCode}</td>
           </tr>
     `
+
+    document.getElementById('client_history_link').href = `/manage/history/${queryParams.get('client_id')}/0`
 
     function redirectToCallback() {
       let finalCallbackUrl = new URL(queryParams.get('redirect_uri'))
