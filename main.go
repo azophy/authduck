@@ -62,8 +62,25 @@ func NewTemplateRenderer() *Template {
   return renderer
 }
 
+func renderHTML(htmlTemplate string, data interface{}) (string, error) {
+  // Parse and execute the template
+  tmpl, err := template.New("htmlTemplate").Parse(htmlTemplate)
+  if err != nil {
+    return "", err
+  }
+
+  // Create a buffer to hold the executed template
+  var renderedContent strings.Builder
+  if err := tmpl.Execute(&renderedContent, data); err != nil {
+    return "", err
+  }
+
+  // Return the rendered HTML
+  return renderedContent.String(), nil
+}
+
 func historyDetailHandler(c echo.Context) error {
-  clientId := c.QueryParam("client_id")
+  clientId := c.QueryParam("id")
   from := c.QueryParam("from")
   histories, err := HistoryRepository.All(clientId, from)
   if err != nil {
@@ -72,9 +89,10 @@ func historyDetailHandler(c echo.Context) error {
 
   templ := `
       <div id="history-list">
-        <for hx-get="/manage/history__" hx-target="history-list">
+        <form hx-get="/manage/history__" hx-target="#history-list">
           <label for="">client_id</label>
-          <input type="text">
+          <input type="text" name="id" value="{{ .client_id }}">
+          <input type="hidden" name="from" value="0">
           <button type="submit">get</button>
         </form>
 
@@ -86,21 +104,32 @@ func historyDetailHandler(c echo.Context) error {
             </tr>
           </thead>
           <tbody>
-            {{ len . | le 0 }}
-            empty data
-            {{ else }} {{ range . }}
+          {{ if len .histories | ge 0 }}
+              empty data for client "{{ .client_id }}"
+            {{ else }}
+              {{ range .histories }}
               <tr>
                 <td>{{ .Timestamp }}</td>
-                <td><pre>
-                  {{ .Data }}
-                </pre></td>
+                <td>
+                <textarea style="width:100%" rows="5" disabled>{{ .Data }}</textarea>
+                </td>
               </tr>
-            {{ end }} {{ end }}
+              {{ end }}
+            {{ end }}
           </tbody>
         </table>
       </div>
   `
-  return c.Render(http.StatusOK, templ, histories)
+  res, err := renderHTML(templ, map[string]interface{}{
+    "histories": histories,
+    "client_id": clientId,
+  })
+  if err != nil {
+    log.Printf("found err %v\n", err)
+    return err
+  }
+
+  return c.HTML(http.StatusOK, res)
 }
 
 func extractBasicAuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {

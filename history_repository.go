@@ -2,6 +2,7 @@
 package main
 
 import (
+  "log"
   "database/sql"
   //"errors"
 
@@ -54,10 +55,13 @@ func (r *HistoryModel) Migrate() error {
 }
 
 func (r *HistoryModel) Record(clientId, data string) error {
-  _, err := r.db.Exec("INSERT INTO history(client_id, data) values(?, ?)",clientId, data)
+  res, err := r.db.Exec("INSERT INTO history(client_id, data) values(?, ?)",clientId, data)
   if err != nil {
     return err
   }
+
+  id, _ := res.LastInsertId()
+  log.Printf("inserted history with clint id %v & history id %v\n", clientId, id)
 
   return nil
 }
