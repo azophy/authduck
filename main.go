@@ -87,13 +87,12 @@ func historyDetailHandler(c echo.Context) error {
     return err
   }
 
-  log.Println(len(histories))
-
   templ := `
       <div id="history-list">
-        <for hx-get="/manage/history__" hx-target="history-list">
+        <form hx-get="/manage/history__" hx-target="#history-list">
           <label for="">client_id</label>
-          <input type="text" name="id">
+          <input type="text" name="id" value="{{ .client_id }}">
+          <input type="hidden" name="from" value="0">
           <button type="submit">get</button>
         </form>
 
@@ -105,22 +104,28 @@ func historyDetailHandler(c echo.Context) error {
             </tr>
           </thead>
           <tbody>
-            {{ if len . | le 0 }}
-              empty data
-            {{ else }} {{ range . }}
+          {{ if len .histories | ge 0 }}
+              empty data for client "{{ .client_id }}"
+            {{ else }}
+              {{ range .histories }}
               <tr>
                 <td>{{ .Timestamp }}</td>
-                <td><pre>
-                  {{ .Data }}
-                </pre></td>
+                <td>
+                <textarea style="width:100%" rows="5" disabled>{{ .Data }}</textarea>
+                </td>
               </tr>
-            {{ end }} {{ end }}
+              {{ end }}
+            {{ end }}
           </tbody>
         </table>
       </div>
   `
-  res, err := renderHTML(templ, histories)
+  res, err := renderHTML(templ, map[string]interface{}{
+    "histories": histories,
+    "client_id": clientId,
+  })
   if err != nil {
+    log.Printf("found err %v\n", err)
     return err
   }
 
