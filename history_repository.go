@@ -19,7 +19,11 @@ type History struct {
   ID int
   Timestamp string
   ClientId string
-  Data string
+  HTTPMethod string
+  Url string
+  Headers string
+  Body string
+  QueryParams string
 }
 
 type HistoryModel struct {
@@ -41,7 +45,11 @@ func (r *HistoryModel) Migrate() error {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       client_id TEXT NOT NULL,
-      data TEXT NOT NULL
+      http_method TEXT NOT NULL,
+      url TEXT NOT NULL,
+      headers TEXT,
+      body TEXT,
+      query_params TEXT
     );
   `
 
@@ -49,8 +57,11 @@ func (r *HistoryModel) Migrate() error {
   return err
 }
 
-func (r *HistoryModel) Record(clientId, data string) error {
-  res, err := r.db.Exec("INSERT INTO history(client_id, data) values(?, ?)",clientId, data)
+func (r *HistoryModel) Record(clientId, httpMethod, url, headers, body, queryParams string) error {
+  res, err := r.db.Exec(`
+    INSERT INTO history(client_id, http_method, url, headers, body, query_params)
+    VALUES(?, ?, ?, ?, ?, ?)
+  `, clientId, httpMethod, url, headers, body, queryParams)
   if err != nil {
     return err
   }
@@ -71,7 +82,16 @@ func (r *HistoryModel) All(clientId string, from string) ([]History, error) {
   var all []History
   for rows.Next() {
     var history History
-    if err := rows.Scan(&history.ID, &history.Timestamp, &history.ClientId, &history.Data); err != nil {
+    if err := rows.Scan(
+      &history.ID,
+      &history.Timestamp,
+      &history.ClientId,
+      &history.HTTPMethod,
+      &history.Url,
+      &history.Headers,
+      &history.Body,
+      &history.QueryParams,
+    ); err != nil {
       return nil, err
     }
     all = append(all, history)

@@ -51,7 +51,13 @@ func historyDetailHandler(c echo.Context) error {
               <tr>
                 <td>{{ .Timestamp }}</td>
                 <td>
-                <textarea style="width:100%" rows="5" disabled>{{ .Data }}</textarea>
+                <textarea style="width:100%" rows="5" disabled>
+- method: {{ .HTTPMethod }}
+- url: {{ .Url }}
+- query params: {{ .QueryParams }}
+- headers: {{ .Headers }}
+- body: {{ .Body }}
+                </textarea>
                 </td>
               </tr>
               {{ end }}
@@ -130,18 +136,20 @@ func historyRecorderMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
         // Combine multiple values for the same header into a single string
         headers[name] = values[0]
       }
-
       formParams, _ := c.FormParams()
 
-      data := map[string]interface{}{
-        "http_method": c.Request().Method,
-        "url": c.Request().URL.String(),
-        "headers": headers,
-        "form_params": formParams,
-        "query_params": c.QueryParams(),
-      }
-      bytes, _ := json.Marshal(data)
-      HistoryRepository.Record(clientId, string(bytes))
+      headerBytes, _ := json.Marshal(headers)
+      formParamsBytes, _ := json.Marshal(formParams)
+      queryParamsBytes, _ := json.Marshal(c.QueryParams())
+
+      HistoryRepository.Record(
+        clientId,
+        c.Request().Method,
+        c.Request().URL.String(),
+        string(headerBytes),
+        string(formParamsBytes),
+        string(queryParamsBytes),
+      )
     }
 
     return next(c)

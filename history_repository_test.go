@@ -34,7 +34,7 @@ func TestHistoryModelMigrate(t *testing.T) {
 func TestHistoryModelRecord(t *testing.T) {
 	model := setupTestDB(t)
 
-	err := model.Record("client1", "some data")
+  err := model.Record("client1", "example.com", "GET", "X-example: wow", `{"success":"ok"}`, "")
 	if err != nil {
 		t.Errorf("inserting record produced an error: %v", err)
 	}
@@ -53,7 +53,7 @@ func TestHistoryModelAll(t *testing.T) {
 	model := setupTestDB(t)
 
 	for i := 0; i < 5; i++ {
-		err := model.Record("client1", "data")
+    err := model.Record("client1", "example.com", "GET", "X-example: wow", `{"success":"ok"}`, "")
 		if err != nil {
 			t.Errorf("inserting record produced an error: %v", err)
 		}
