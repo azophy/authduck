@@ -26,12 +26,7 @@ type HistoryModel struct {
   db *sql.DB
 }
 
-func NewHistoryModel(path string) (*HistoryModel, error) {
-  db, err := sql.Open("sqlite3", path)
-  if err != nil {
-    return nil, err
-  }
-
+func NewHistoryModel(db *sql.DB) (*HistoryModel, error) {
   newInstance :=  &HistoryModel{
     db: db,
   }

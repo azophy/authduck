@@ -9,7 +9,9 @@ import (
   "crypto/ecdsa"
   "crypto/ed25519"
   "crypto/elliptic"
+  "database/sql"
 
+  _ "github.com/mattn/go-sqlite3"
   "github.com/lestrrat-go/jwx/v2/jwa"
   "github.com/lestrrat-go/jwx/v2/jwk"
   "github.com/lestrrat-go/jwx/v2/jwt"
@@ -24,6 +26,9 @@ var (
   RSAPrivateKey *rsa.PrivateKey
   ECPrivateKey *ecdsa.PrivateKey
   EDPrivateKey ed25519.PrivateKey
+
+  DBFilePath = GetEnvOrDefault("DB_FILE_PATH", ":memory:")
+  DBConn *sql.DB
 )
 
 func InitiateGlobalVars() error {
@@ -75,7 +80,12 @@ func InitiateGlobalVars() error {
   _ = PublicJWKS.AddKey(EDPublicJWK)
 
   log.Println("setting up db")
-  HistoryRepository, err = NewHistoryModel("./db.sqlite3")
+  DBConn, err := sql.Open("sqlite3", DBFilePath)
+  if err != nil {
+    return err
+  }
+
+  HistoryRepository, err = NewHistoryModel(DBConn)
   if err != nil {
     log.Printf("failed to initiate HistoryModel: %s\n", err)
     return err
