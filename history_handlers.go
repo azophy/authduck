@@ -14,68 +14,27 @@ func RegisterHistoryHandlers(app *echo.Echo) {
   app.Use(extractBasicAuthMiddleware)
   app.Use(historyRecorderMiddleware)
 
-	app.GET("/manage/history", ServeResourceFile("resources/pages/history_detail.html"))
-  app.GET("/manage/history__", historyDetailHandler)
-
+	app.GET("/manage/history", historyDetailHandler)
 }
 
 func historyDetailHandler(c echo.Context) error {
   clientId := c.QueryParam("id")
-  from := c.QueryParam("from")
+  from := "0"
+  if c.QueryParam("from") != "" {
+    from = c.QueryParam("from")
+  }
+
   histories, err := HistoryRepository.All(clientId, from)
   if err != nil {
     return err
   }
 
-  templ := `
-      <div id="history-list">
-        <form hx-get="/manage/history__" hx-target="#history-list">
-          <label for="">client_id</label>
-          <input type="text" name="id" value="{{ .client_id }}">
-          <input type="hidden" name="from" value="0">
-          <button type="submit">get</button>
-        </form>
+  template := "resources/views/history.html"
 
-        <table>
-          <thead>
-            <tr>
-              <th>timestamp</th>
-              <th>data</th>
-            </tr>
-          </thead>
-          <tbody>
-          {{ if len .histories | ge 0 }}
-              empty data for client "{{ .client_id }}"
-            {{ else }}
-              {{ range .histories }}
-              <tr>
-                <td>{{ .Timestamp }}</td>
-                <td>
-                <textarea style="width:100%" rows="5" disabled>
-- method: {{ .HTTPMethod }}
-- url: {{ .Url }}
-- query params: {{ .QueryParams }}
-- headers: {{ .Headers }}
-- body: {{ .Body }}
-                </textarea>
-                </td>
-              </tr>
-              {{ end }}
-            {{ end }}
-          </tbody>
-        </table>
-      </div>
-  `
-  res, err := RenderHTML(templ, map[string]interface{}{
+  return c.Render(http.StatusOK, template, map[string]interface{}{
     "histories": histories,
     "client_id": clientId,
   })
-  if err != nil {
-    log.Printf("found err %v\n", err)
-    return err
-  }
-
-  return c.HTML(http.StatusOK, res)
 }
 
 func extractBasicAuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {

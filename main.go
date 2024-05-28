@@ -17,10 +17,10 @@ func main() {
 
 	e := echo.New()
 
-  e.Renderer = NewTemplateRenderer()
+  e.Renderer = SetupTemplateRegistry("resources/views/*")
   RegisterHistoryHandlers(e)
 
-	e.GET("/", ServeResourceFile("resources/pages/index.html"))
+	e.GET("/", ServeResourceTemplate("resources/views/home.html", nil))
 	e.GET("/assets/*", ServeResourceFolder("resources"))
 
 	e.GET("/.well-known/certs", func (c echo.Context) error {

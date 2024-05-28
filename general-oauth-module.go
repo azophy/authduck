@@ -21,7 +21,7 @@ func RegisterGeneralOAuthModule(app *echo.Echo) {
 
 	e.GET("/.well-known/openid-configuration", openidconfigHandler)
 	//e.GET("/auth/callback", CallbackHandler)
-  e.File("/auth/callback", "resources/pages/callback.html")
+  e.GET("/auth/callback", ServeResourceTemplate("resources/views/generic_callback.html", nil))
 	e.POST("/auth/token", tokenHandler)
 }
 

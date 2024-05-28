@@ -1,0 +1,47 @@
+{{define "base_template_path"}}resources/views/layout_base.html{{end}}
+
+{{define "title"}}
+Authduck | Home
+{{end}}
+
+{{define "body"}}
+<article>
+  <div id="history-list">
+    <form hx-get="/manage/history__" hx-target="#history-list">
+      <label for="">client_id</label>
+      <input type="text" name="id" value="{{ .client_id }}">
+      <input type="hidden" name="from" value="0">
+      <button type="submit">get</button>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>timestamp</th>
+          <th>data</th>
+        </tr>
+      </thead>
+      <tbody>
+      {{ if len .histories | ge 0 }}
+          empty data for client "{{ .client_id }}"
+        {{ else }}
+          {{ range .histories }}
+          <tr>
+            <td>{{ .Timestamp }}</td>
+            <td>
+            <textarea style="width:100%" rows="5" disabled>
+  - method: {{ .HTTPMethod }}
+  - url: {{ .Url }}
+  - query params: {{ .QueryParams }}
+  - headers: {{ .Headers }}
+  - body: {{ .Body }}
+            </textarea>
+            </td>
+          </tr>
+          {{ end }}
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+</article>
+{{end}}
