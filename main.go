@@ -27,7 +27,7 @@ func main() {
 		return c.JSON(http.StatusOK, PublicJWKS)
   })
 
-  RegisterGeneralOAuthModule(e)
+  RegisterGenericOAuthHandlers(e)
 
 	e.Logger.Fatal(e.Start(":" + APP_PORT))
 }
