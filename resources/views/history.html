@@ -5,9 +5,8 @@ Authduck | Client request history
 {{end}}
 
 {{define "body"}}
-<article>
-  <div id="history-list">
-    <form hx-get="/manage/history__" hx-target="#history-list">
+<article id="history-list">
+    <form hx-get="/manage/history" hx-target="#history-list" hx-swap="outerHTML">
       <label for="">client_id</label>
       <input type="text" name="id" value="{{ .client_id }}">
       <input type="hidden" name="from" value="0">
@@ -42,6 +41,5 @@ Authduck | Client request history
         {{ end }}
       </tbody>
     </table>
-  </div>
 </article>
 {{end}}

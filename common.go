@@ -15,6 +15,7 @@ import (
   "github.com/lestrrat-go/jwx/v2/jwa"
   "github.com/lestrrat-go/jwx/v2/jwk"
   "github.com/lestrrat-go/jwx/v2/jwt"
+	"github.com/labstack/echo/v4"
 )
 
 var (
@@ -112,4 +113,9 @@ func GetEnvOrDefault(varName string, defaultValue string) string {
   } else {
     return defaultValue
   }
+}
+
+func IsReqFromHTMX(c echo.Context) bool {
+  htmxHeader := c.Request().Header.Get("HX-REQUEST")
+  return (htmxHeader != "")
 }

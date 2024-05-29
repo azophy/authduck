@@ -31,6 +31,10 @@ func historyDetailHandler(c echo.Context) error {
 
   template := "resources/views/history.html"
 
+  if IsReqFromHTMX(c) {
+    template = template + "#partial"
+  }
+
   return c.Render(http.StatusOK, template, map[string]interface{}{
     "histories": histories,
     "client_id": clientId,
