@@ -3,9 +3,17 @@ package main
 
 import (
   "log"
+  "errors"
   "database/sql"
 
   _ "github.com/mattn/go-sqlite3"
+)
+
+var (
+    ErrDuplicate    = errors.New("record already exists")
+    ErrNotExists    = errors.New("row not exists")
+    ErrUpdateFailed = errors.New("update failed")
+    ErrDeleteFailed = errors.New("delete failed")
 )
 
 type CodeExchange struct {
@@ -59,26 +67,22 @@ func (r *CodeExchangeModel) Add(clientId, code, payload string) error {
   return nil
 }
 
-func (r *CodeExchangeModel) GetOne(clientId string, code string) (CodeExchange, error) {
+func (r *CodeExchangeModel) GetOne(clientId string, code string) (*CodeExchange, error) {
   var item CodeExchange
-  rows, err := r.db.Query("SELECT * FROM code_exchange WHERE client_id = ? AND code = ? LIMIT 1", clientId, code)
-  if err != nil {
-    return item, err
-  }
-  defer rows.Close()
-
-  for rows.Next() {
-    if err := rows.Scan(
-      &item.ID,
-      &item.Timestamp,
-      &item.ClientId,
-      &item.Code,
-      &item.Payload,
-    ); err != nil {
-      return item, err
+  row := r.db.QueryRow("SELECT * FROM code_exchange WHERE client_id = ? AND code = ?", clientId, code)
+  if err := row.Scan(
+    &item.ID,
+    &item.Timestamp,
+    &item.ClientId,
+    &item.Code,
+    &item.Payload,
+  ); err != nil {
+    if errors.Is(err, sql.ErrNoRows) {
+      return nil, ErrNotExists
     }
+    return nil, err
   }
 
-  return item, nil
+  return &item, nil
 }
 

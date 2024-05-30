@@ -11,17 +11,19 @@ import (
   "crypto/elliptic"
   "database/sql"
 
+	"github.com/labstack/echo/v4"
   _ "github.com/mattn/go-sqlite3"
   "github.com/lestrrat-go/jwx/v2/jwa"
   "github.com/lestrrat-go/jwx/v2/jwk"
   "github.com/lestrrat-go/jwx/v2/jwt"
-	"github.com/labstack/echo/v4"
+  //"github.com/lestrrat-go/jwx/v2/jwt/openid"
 )
 
 var (
   BaseUrl = GetEnvOrDefault("BASE_URL", "http://localhost:3000")
 
   HistoryRepository *HistoryModel
+  CodeExchangeRepository *CodeExchangeModel
 
   PublicJWKS = jwk.NewSet()
   RSAPrivateKey *rsa.PrivateKey
@@ -92,7 +94,26 @@ func InitiateGlobalVars() error {
     return err
   }
 
+  CodeExchangeRepository, err = NewCodeExchangeModel(DBConn)
+  if err != nil {
+    log.Printf("failed to initiate CodeExchangeModel: %s\n", err)
+    return err
+  }
+
   return nil
+}
+
+func GetEnvOrDefault(varName string, defaultValue string) string {
+  if os.Getenv(varName) != "" {
+    return os.Getenv(varName)
+  } else {
+    return defaultValue
+  }
+}
+
+func IsReqFromHTMX(c echo.Context) bool {
+  htmxHeader := c.Request().Header.Get("HX-REQUEST")
+  return (htmxHeader != "")
 }
 
 func CreateJWT(alg jwa.SignatureAlgorithm, token jwt.Token) ([]byte, error) {
@@ -107,15 +128,15 @@ func CreateJWT(alg jwa.SignatureAlgorithm, token jwt.Token) ([]byte, error) {
   return nil, errors.New("Invalid jwt signature")
 }
 
-func GetEnvOrDefault(varName string, defaultValue string) string {
-  if os.Getenv(varName) != "" {
-    return os.Getenv(varName)
-  } else {
-    return defaultValue
+func CreateJwtFromJson(rawPayload string) ([]byte, error) {
+  token, err := jwt.Parse([]byte(rawPayload), jwt.WithVerify(false))
+  if err != nil {
+    log.Printf("error on generating JWT: %v", err)
+    return nil, err
   }
-}
-
-func IsReqFromHTMX(c echo.Context) bool {
-  htmxHeader := c.Request().Header.Get("HX-REQUEST")
-  return (htmxHeader != "")
+  alg, ok := token.Get("alg")
+  if !ok {
+    return nil, errors.New("no alg defined inside JSON payload")
+  }
+  return CreateJWT(jwa.SignatureAlgorithm(alg.(string)), token)
 }

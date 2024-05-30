@@ -2,16 +2,12 @@ package main
 
 import (
   "log"
-  "time"
+  "errors"
   "net/url"
   "net/http"
-  "math/rand"
   "encoding/json"
 
 	"github.com/labstack/echo/v4"
-  "github.com/lestrrat-go/jwx/v2/jwa"
-  "github.com/lestrrat-go/jwx/v2/jwt"
-  "github.com/lestrrat-go/jwx/v2/jwt/openid"
 )
 
 const (
@@ -28,7 +24,7 @@ func RegisterGenericOAuthHandlers(app *echo.Echo) {
 }
 
 func openidconfigHandler(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]interface{}{
+		return c.JSON(http.StatusOK, echo.Map{
       "issuer": BaseUrl,
       "authorization_endpoint": BaseUrl + routeParent + "/auth/callback",
       "token_endpoint": BaseUrl + routeParent + "/auth/token",
@@ -290,7 +286,7 @@ func openidconfigHandler(c echo.Context) error {
       //},
       //"require_pushed_authorization_requests": false,
       //"pushed_authorization_request_endpoint": "https://example.com/protocol/openid-connect/ext/par/request",
-      //"mtls_endpoint_aliases": map[string]interface{}{
+      //"mtls_endpoint_aliases": echo.Map{
         //"token_endpoint": "https://example.com/protocol/openid-connect/token",
         //"revocation_endpoint": "https://example.com/protocol/openid-connect/revoke",
         //"introspection_endpoint": "https://example.com/protocol/openid-connect/token/introspect",
@@ -305,68 +301,72 @@ func openidconfigHandler(c echo.Context) error {
 
 func callbackPostHandler(c echo.Context) error {
     callbackPayloadRaw := c.FormValue("callback_payload")
-    // codeExchangePayload := c.FormValue("code_exchange_payload")
-    var data map[string]interface{}
-    _ = json.Unmarshal([]byte(callbackPayloadRaw), &data)
+    clientId := c.FormValue("client_id")
+
+    // prepare callback
+    var callbackPayload echo.Map
+    _ = json.Unmarshal([]byte(callbackPayloadRaw), &callbackPayload)
 
     q := url.Values{}
-    for k,v := range data {
+    for k,v := range callbackPayload {
       q.Set(k, v.(string))
     }
 
-    redirectUrl, _ := url.Parse(data["redirect_uri"].(string))
+    redirectUrl, err := url.Parse(callbackPayload["redirect_uri"].(string))
+    if err != nil {
+      log.Printf("error on redirect_url: %v", err)
+      return err
+    }
     redirectUrl.RawQuery = q.Encode()
 
-    return c.Redirect(http.StatusSeeOther, redirectUrl.String())
+    // store code exchange payload
+    accessTokenPayloadRaw := c.FormValue("access_token_payload")
+    accessToken, err := CreateJwtFromJson(accessTokenPayloadRaw)
+    if err != nil {
+      log.Printf("error on generating access token: %v", err)
+      return err
+    }
+    idTokenPayloadRaw := c.FormValue("id_token_payload")
+    idToken, err := CreateJwtFromJson(idTokenPayloadRaw)
+    if err != nil {
+      log.Printf("error on generating id token: %v", err)
+      return err
+    }
 
+    codeExchangePayload, _ := json.Marshal(echo.Map{
+      "id_token": idToken,
+      "access_token": accessToken,
+    })
+    err = CodeExchangeRepository.Add(
+      clientId,
+      callbackPayload["code"].(string),
+      string(codeExchangePayload),
+    )
+    if err != nil {
+      log.Printf("error on generating exchange payload: %v", err)
+      return err
+    }
+
+    return c.Redirect(http.StatusSeeOther, redirectUrl.String())
 }
 
 func tokenHandler(c echo.Context) error {
-    formParams, _ := c.FormParams()
+    client_id := c.FormValue("client_id")
+    code := c.FormValue("code")
 
-    // select random alg among available ones for JWT
-    algs := []jwa.SignatureAlgorithm{
-      jwa.RS256,
-      jwa.ES384,
-      jwa.EdDSA,
-    }
-    alg := algs[ rand.Intn(len(algs)) ]
-    log.Printf("selected alg: %v\n", alg)
-
-    expireDuration,_ := time.ParseDuration("1h")
-
-    accessToken := jwt.New()
-    accessToken.Set(jwt.SubjectKey, c.FormValue("code"))
-    accessToken.Set(jwt.IssuerKey, BaseUrl)
-    accessToken.Set(jwt.AudienceKey, `Golang Users`)
-    accessToken.Set(jwt.IssuedAtKey, time.Now())
-    accessToken.Set(jwt.ExpirationKey, time.Now().Add(expireDuration))
-    accessToken.Set(`code`, c.FormValue("code"))
-
-    idToken := openid.New()
-    idToken.Set(jwt.SubjectKey, c.FormValue("code"))
-    idToken.Set(jwt.IssuerKey, BaseUrl)
-    idToken.Set(jwt.AudienceKey, `Golang Users`)
-    idToken.Set(openid.NameKey, `John Doe`)
-    idToken.Set(jwt.IssuedAtKey, time.Now())
-    idToken.Set(jwt.ExpirationKey, time.Now().Add(expireDuration))
-    idToken.Set(`code`, c.FormValue("code"))
-
-    finalIdToken, err := CreateJWT(alg, idToken)
+    codeExchange, err := CodeExchangeRepository.GetOne(client_id, code)
     if err != nil {
-      log.Printf("error signing Id Token: %s\n", err)
-      return err
+      log.Printf("error on retrieving exchange payload: %v", err)
+
+      if errors.Is(err, ErrNotExists) {
+		    return c.JSON(http.StatusNotFound, echo.Map{
+          "error": "not found",
+          "error_description": "client id & secret pair not found",
+        })
+      } else {
+        return err
+      }
     }
 
-    finalAccessToken, err := CreateJWT(alg, accessToken)
-    if err != nil {
-      log.Printf("error signing Access Token: %s\n", err)
-      return err
-    }
-
-		return c.JSON(http.StatusOK, map[string]interface{}{
-      "params": formParams,
-      "id_token": string(finalIdToken),
-      "access_token": string(finalAccessToken),
-    })
+		return c.JSONBlob(http.StatusOK, []byte(codeExchange.Payload))
 }

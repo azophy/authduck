@@ -17,6 +17,8 @@ Authduck | Generic OIDC Callback
 
   <form action="./callback" method="post">
 
+  <input type="hidden" id="client_id" name="client_id">
+
   <h2>Request</h2>
   <p>This is the details of request made to this page:</p>
   <textarea id="request_payload" style="width:100%" rows="5" disabled></textarea>
@@ -46,7 +48,7 @@ Authduck | Generic OIDC Callback
   const accessTokenPayload = document.getElementById('access_token_payload')
   const idTokenPayload = document.getElementById('id_token_payload')
   const authorizationCode = generateString(20)
-  const currentTimestamp = Date.now()
+  const currentTimestamp = Math.floor(Date.now() / 1000)
 
   requestPayload.value = JSON.stringify(Object.fromEntries(queryParams.entries()), null, 2)
 
@@ -77,6 +79,7 @@ Authduck | Generic OIDC Callback
   idTokenPayload.value = JSON.stringify(idTokenData, null, 2)
 
   document.getElementById('client_history_link').href = `/manage/history?id=${queryParams.get('client_id')}`
+  document.getElementById('client_id').value = queryParams.get('client_id')
 
 </script>
 {{end}}
