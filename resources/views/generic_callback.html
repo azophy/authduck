@@ -27,7 +27,10 @@ Authduck | Generic OIDC Callback
 
   <h2>Code Exchange Payload</h2>
   <p>This is the details of payload which would be returned when client exchanging the authorization code defined above:</p>
-  <textarea id="code_exchange_payload" name="code_exchange_payload" style="width:100%" rows="5"></textarea>
+  <label for="access_token_payload">Access Token Payload</label>
+  <textarea id="access_token_payload" name="access_token_payload" style="width:100%" rows="5"></textarea>
+  <label for="id_token_payload">ID Token Payload</label>
+  <textarea id="id_token_payload" name="id_token_payload" style="width:100%" rows="5"></textarea>
 
   <button type="submit">Continue OIDC Process</button>
   </form>
@@ -40,7 +43,8 @@ Authduck | Generic OIDC Callback
   const queryParams = new URLSearchParams(window.location.search)
   const requestPayload = document.getElementById('request_payload')
   const callbackPayload = document.getElementById('callback_payload')
-  const codeExhangePayload = document.getElementById('code_exchange_payload')
+  const accessTokenPayload = document.getElementById('access_token_payload')
+  const idTokenPayload = document.getElementById('id_token_payload')
   const authorizationCode = generateString(20)
   const currentTimestamp = Date.now()
 
@@ -52,18 +56,25 @@ Authduck | Generic OIDC Callback
     code: authorizationCode,
   }, null, 2)
 
-  codeExhangePayload.value = JSON.stringify({
+  const accessTokenData = {
     alg: 'RS256',
     sub: 'random_subject_id',
     iss: window.location.hostname,
     aud: queryParams.get('redirect_uri'),
     iat: currentTimestamp,
     exp: currentTimestamp + 3600,
+  }
+
+  const idTokenData = {
+    ...accessTokenData,
 
     // openid payload
     name: 'John Doe',
     email: 'mail@example.com',
-  }, null, 2)
+  }
+
+  accessTokenPayload.value = JSON.stringify(accessTokenData, null, 2)
+  idTokenPayload.value = JSON.stringify(idTokenData, null, 2)
 
   document.getElementById('client_history_link').href = `/manage/history?id=${queryParams.get('client_id')}`
 
