@@ -304,7 +304,6 @@ func openidconfigHandler(c echo.Context) error {
 }
 
 func callbackPostHandler(c echo.Context) error {
-  log.Println("okokok")
     callbackPayloadRaw := c.FormValue("callback_payload")
     // codeExchangePayload := c.FormValue("code_exchange_payload")
     var data map[string]interface{}
@@ -318,7 +317,7 @@ func callbackPostHandler(c echo.Context) error {
     redirectUrl, _ := url.Parse(data["redirect_uri"].(string))
     redirectUrl.RawQuery = q.Encode()
 
-    return c.Redirect(http.StatusTemporaryRedirect, redirectUrl.String())
+    return c.Redirect(http.StatusSeeOther, redirectUrl.String())
 
 }
 

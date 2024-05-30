@@ -15,7 +15,7 @@ Authduck | Generic OIDC Callback
 
   <a href="#" target="_blank" id="client_history_link">see client history</a>
 
-  <form action="." method="post">
+  <form action="./callback" method="post">
 
   <h2>Request</h2>
   <p>This is the details of request made to this page:</p>
@@ -26,7 +26,7 @@ Authduck | Generic OIDC Callback
   <textarea id="callback_payload" name="callback_payload" style="width:100%" rows="5"></textarea>
 
   <h2>Code Exchange Payload</h2>
-  <p>This is the details of payload which would be returned when client exchanging the authorization code :</p>
+  <p>This is the details of payload which would be returned when client exchanging the authorization code defined above:</p>
   <textarea id="code_exchange_payload" name="code_exchange_payload" style="width:100%" rows="5"></textarea>
 
   <button type="submit">Continue OIDC Process</button>
@@ -41,14 +41,28 @@ Authduck | Generic OIDC Callback
   const requestPayload = document.getElementById('request_payload')
   const callbackPayload = document.getElementById('callback_payload')
   const codeExhangePayload = document.getElementById('code_exchange_payload')
-  const callbackCode = generateString(20)
+  const authorizationCode = generateString(20)
+  const currentTimestamp = Date.now()
 
   requestPayload.value = JSON.stringify(Object.fromEntries(queryParams.entries()), null, 2)
 
-  callbackPayload.innerHTML = JSON.stringify({
+  callbackPayload.value = JSON.stringify({
     redirect_uri: queryParams.get('redirect_uri'),
     state: queryParams.get('state'),
-    code: callbackCode,
+    code: authorizationCode,
+  }, null, 2)
+
+  codeExhangePayload.value = JSON.stringify({
+    alg: 'RS256',
+    sub: 'random_subject_id',
+    iss: window.location.hostname,
+    aud: queryParams.get('redirect_uri'),
+    iat: currentTimestamp,
+    exp: currentTimestamp + 3600,
+
+    // openid payload
+    name: 'John Doe',
+    email: 'mail@example.com',
   }, null, 2)
 
   document.getElementById('client_history_link').href = `/manage/history?id=${queryParams.get('client_id')}`
