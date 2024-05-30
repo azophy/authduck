@@ -3,8 +3,10 @@ package main
 import (
   "log"
   "time"
+  "net/url"
   "net/http"
   "math/rand"
+  "encoding/json"
 
 	"github.com/labstack/echo/v4"
   "github.com/lestrrat-go/jwx/v2/jwa"
@@ -13,15 +15,15 @@ import (
 )
 
 const (
-  routeParent = "/case/general"
+  routeParent = "/case/generic"
 )
 
 func RegisterGenericOAuthHandlers(app *echo.Echo) {
   e := app.Group(routeParent)
 
 	e.GET("/.well-known/openid-configuration", openidconfigHandler)
-	//e.GET("/auth/callback", CallbackHandler)
   e.GET("/auth/callback", ServeResourceTemplate("resources/views/generic_callback.html", nil))
+	e.POST("/auth/callback", callbackPostHandler)
 	e.POST("/auth/token", tokenHandler)
 }
 
@@ -299,6 +301,25 @@ func openidconfigHandler(c echo.Context) error {
         //"backchannel_authentication_endpoint": "https://example.com/protocol/openid-connect/ext/ciba/auth",
       //},
     })
+}
+
+func callbackPostHandler(c echo.Context) error {
+  log.Println("okokok")
+    callbackPayloadRaw := c.FormValue("callback_payload")
+    // codeExchangePayload := c.FormValue("code_exchange_payload")
+    var data map[string]interface{}
+    _ = json.Unmarshal([]byte(callbackPayloadRaw), &data)
+
+    q := url.Values{}
+    for k,v := range data {
+      q.Set(k, v.(string))
+    }
+
+    redirectUrl, _ := url.Parse(data["redirect_uri"].(string))
+    redirectUrl.RawQuery = q.Encode()
+
+    return c.Redirect(http.StatusTemporaryRedirect, redirectUrl.String())
+
 }
 
 func tokenHandler(c echo.Context) error {

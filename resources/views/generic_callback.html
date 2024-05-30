@@ -15,32 +15,22 @@ Authduck | Generic OIDC Callback
 
   <a href="#" target="_blank" id="client_history_link">see client history</a>
 
+  <form action="." method="post">
+
   <h2>Request</h2>
   <p>This is the details of request made to this page:</p>
-  <table>
-    <thead>
-      <tr>
-        <th>Key</th>
-        <th>Value</th>
-      </tr>
-    </thead>
-    <tbody id="request-params-table"></tbody>
-  </table>
+  <textarea id="request_payload" style="width:100%" rows="5" disabled></textarea>
 
   <h2>Callback Payload</h2>
   <p>This is the details of payload which would be used as callback query params:</p>
-  <table>
-    <thead>
-      <tr>
-        <th>Key</th>
-        <th>Value</th>
-      </tr>
-    </thead>
-    <tbody id="callback-payload-table">
-    </tbody>
-  </table>
+  <textarea id="callback_payload" name="callback_payload" style="width:100%" rows="5"></textarea>
 
-  <button type="submit" onclick="redirectToCallback()">Return to client</button>
+  <h2>Code Exchange Payload</h2>
+  <p>This is the details of payload which would be returned when client exchanging the authorization code :</p>
+  <textarea id="code_exchange_payload" name="code_exchange_payload" style="width:100%" rows="5"></textarea>
+
+  <button type="submit">Continue OIDC Process</button>
+  </form>
 
 </article>
 <script>
@@ -48,45 +38,20 @@ Authduck | Generic OIDC Callback
   const generateString = length => Array(length).fill('').map((v) => Math.random().toString(36).charAt(2)).join('')
 
   const queryParams = new URLSearchParams(window.location.search)
-  const requestParamTable = document.getElementById('request-params-table')
-  const callbackPayloadTable = document.getElementById('callback-payload-table')
+  const requestPayload = document.getElementById('request_payload')
+  const callbackPayload = document.getElementById('callback_payload')
+  const codeExhangePayload = document.getElementById('code_exchange_payload')
   const callbackCode = generateString(20)
 
-  Array.from(queryParams.entries()).map(
-    row => requestParamTable.innerHTML += `
-        <tr>
-          <td>${row[0]}</td>
-          <td>${row[1]}</td>
-        </tr>
-    `
-  )
+  requestPayload.value = JSON.stringify(Object.fromEntries(queryParams.entries()), null, 2)
 
-  callbackPayloadTable.innerHTML += `
-        <tr>
-          <td>callback url</td>
-          <td>${queryParams.get('redirect_uri')}</td>
-        </tr>
-        <tr>
-          <td>state</td>
-          <td>${queryParams.get('state')}</td>
-        </tr>
-        <tr>
-          <td>code</td>
-          <td>${callbackCode}</td>
-        </tr>
-  `
+  callbackPayload.innerHTML = JSON.stringify({
+    redirect_uri: queryParams.get('redirect_uri'),
+    state: queryParams.get('state'),
+    code: callbackCode,
+  }, null, 2)
 
   document.getElementById('client_history_link').href = `/manage/history?id=${queryParams.get('client_id')}`
 
-  function redirectToCallback() {
-    let finalCallbackUrl = new URL(queryParams.get('redirect_uri'))
-
-    finalCallbackUrl.searchParams.set('state', queryParams.get('state'))
-    finalCallbackUrl.searchParams.set('code', callbackCode)
-
-    if (window.confirm(`Are you sure you want to redirect to ${finalCallbackUrl} ?`)) {
-      window.location = finalCallbackUrl
-    }
-  }
 </script>
 {{end}}
