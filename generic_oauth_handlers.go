@@ -334,8 +334,8 @@ func callbackPostHandler(c echo.Context) error {
     }
 
     codeExchangePayload, _ := json.Marshal(echo.Map{
-      "id_token": idToken,
-      "access_token": accessToken,
+      "id_token": string(idToken),
+      "access_token": string(accessToken),
     })
     err = CodeExchangeRepository.Add(
       clientId,
