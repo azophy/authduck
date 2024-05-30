@@ -67,7 +67,7 @@ func (r *HistoryModel) Record(clientId, httpMethod, url, headers, body, queryPar
   }
 
   id, _ := res.LastInsertId()
-  log.Printf("inserted history with clint id %v & history id %v\n", clientId, id)
+  log.Printf("inserted history with client id %v & history id %v\n", clientId, id)
 
   return nil
 }

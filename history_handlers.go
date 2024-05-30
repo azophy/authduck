@@ -26,6 +26,7 @@ func historyDetailHandler(c echo.Context) error {
 
   histories, err := HistoryRepository.All(clientId, from)
   if err != nil {
+    log.Println(err)
     return err
   }
 
