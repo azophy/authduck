@@ -8,7 +8,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func setupTestDB(t *testing.T) *HistoryModel {
+func setupHistoryTestDB(t *testing.T) *HistoryModel {
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatalf("failed to open the database: %v", err)
@@ -23,7 +23,7 @@ func setupTestDB(t *testing.T) *HistoryModel {
 }
 
 func TestHistoryModelMigrate(t *testing.T) {
-	model := setupTestDB(t)
+	model := setupHistoryTestDB(t)
 
 	err := model.Migrate()
 	if err != nil {
@@ -32,7 +32,7 @@ func TestHistoryModelMigrate(t *testing.T) {
 }
 
 func TestHistoryModelRecord(t *testing.T) {
-	model := setupTestDB(t)
+	model := setupHistoryTestDB(t)
 
   err := model.Record("client1", "example.com", "GET", "X-example: wow", `{"success":"ok"}`, "")
 	if err != nil {
@@ -50,7 +50,7 @@ func TestHistoryModelRecord(t *testing.T) {
 }
 
 func TestHistoryModelAll(t *testing.T) {
-	model := setupTestDB(t)
+	model := setupHistoryTestDB(t)
 
 	for i := 0; i < 5; i++ {
     err := model.Record("client1", "example.com", "GET", "X-example: wow", `{"success":"ok"}`, "")
