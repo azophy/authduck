@@ -3,12 +3,10 @@ FROM golang:1.22-alpine AS build-stage
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
-RUN go mod download
+COPY . .
+RUN go mod tidy
 
-COPY *.go ./
-
-RUN CGO_ENABLED=0 GOOS=linux go build -o /authduck
+RUN CGO_ENABLED=0 GOOS=linux go build -o authduck 
 
 # Run the tests in the container
 FROM build-stage AS run-test-stage
@@ -19,7 +17,7 @@ FROM gcr.io/distroless/base-debian11 AS build-release-stage
 
 WORKDIR /
 
-COPY --from=build-stage /authduck /authduck
+COPY --from=build-stage /app/authduck /authduck
 
 EXPOSE 3000
 
