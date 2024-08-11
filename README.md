@@ -1,5 +1,5 @@
 <p align="center" width="300" height="300">
-  <img src="/azophy/authduck/raw/main/resources/assets/logo.png?raw=true" alt="Authduck Logo" />
+  <img src="./resources/assets/logo.png?raw=true" alt="Authduck Logo" />
 </p>
 
 # AuthDuck
