@@ -1,4 +1,6 @@
-![Authduck Logo](resources/assets/logo.png?raw=true "Authduck Logo")
+<p align="center" width="300" height="300">
+  <img src="/azophy/authduck/raw/main/resources/assets/logo.png?raw=true" alt="Authduck Logo" />
+</p>
 
 # AuthDuck
 OIDC Identity Provider for development & testing
