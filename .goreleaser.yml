@@ -25,7 +25,7 @@ dockers:
   - --label=org.opencontainers.image.licenses=MIT
 - image_templates: ["ghcr.io/azophy/{{ .ProjectName }}:{{ .Version }}-arm64v8"]
   goarch: arm64
-  dockerfile: Dockerfile
+  dockerfile: docker/release.Dockerfile
   use: buildx
   build_flag_templates:
   - --platform=linux/arm64/v8
