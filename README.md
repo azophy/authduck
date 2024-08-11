@@ -1,3 +1,5 @@
+![Authduck Logo](resources/assets/logo.png?raw=true "Authduck Logo")
+
 # AuthDuck
 OIDC Identity Provider for development & testing
 
