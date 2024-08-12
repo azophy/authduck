@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="300" height="300" src="./resources/assets/logo.png?raw=true" alt="Authduck Logo" />
+  <img width="200" height="200" src="./resources/assets/logo.svg?raw=true" alt="Authduck Logo" />
 </p>
 
 # AuthDuck
