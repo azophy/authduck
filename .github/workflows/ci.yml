@@ -21,6 +21,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup go build dependency
+        run: sudo apt-get -y install gcc-aarch64-linux-gnu
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
 
