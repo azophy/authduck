@@ -19,10 +19,6 @@ func RegisterHistoryHandlers(app *echo.Echo) {
 
 func historyDetailHandler(c echo.Context) error {
   clientId := c.QueryParam("id")
-  if clientId == "" {
-    return c.String(http.StatusOK, "no client id defined. please enter to get request histories by client id")
-  }
-
   from := "0"
   if c.QueryParam("from") != "" {
     from = c.QueryParam("from")

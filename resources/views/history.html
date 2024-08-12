@@ -21,8 +21,10 @@ Authduck | Client request history
         </tr>
       </thead>
       <tbody>
-      {{ if len .histories | ge 0 }}
-          empty data for client "{{ .client_id }}"
+        {{ if eq .client_id "" }}
+          no client id supplied. please provide to see request history for the client
+        {{ else if len .histories | ge 0 }}
+          no request yet for client "{{ .client_id }}"
         {{ else }}
           {{ range .histories }}
           <tr>
