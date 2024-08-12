@@ -15,9 +15,9 @@ registering on a cloud OIDC provider is not always straightforward (google, twit
 
 Curently we only provide a generic OIDC server module. However in the future we plan to add mock server for popular services such as Google, Github, Keycloak, etc.
 
-To start playing with this tools, you could use any OIDC client you have (for example: <a href="https://openidconnect.net" target="_blank">openidconnect.net</a> , an OIDC client playground by <a href="https://auth0.com" target="_blank">Auth0</a>), and then use the <a href="https://authduck.fly.dev/case/generic/.well-known/openid-configuration">/.well-known/openid-configuration</a> path to populate all the required fields.
+To start playing with this tools as a Generic OIDC Server, you could use any OIDC client you have (for example: <a href="https://openidconnect.net" target="_blank">openidconnect.net</a> , an OIDC client playground by <a href="https://auth0.com" target="_blank">Auth0</a>), and then use the <a href="https://authduck.fly.dev/case/generic/.well-known/openid-configuration">/.well-known/openid-configuration</a> path to populate all the required fields. You could also view request history to known client by visiting the <a target="_blank" href="./manage/history">request history page</a>.
 
-You could also view request history to known client by visiting the <a target="_blank" href="./manage/history">request history page</a>.
+There are a [tutorial in our wiki page](https://github.com/azophy/authduck/wiki/How-to-play-with-Authduck-&-Openidconnect.net) if you wish for a more detailed guidance.
 
 ## How To Install
 
