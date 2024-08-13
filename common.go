@@ -14,7 +14,7 @@ import (
   "database/sql"
 
 	"github.com/labstack/echo/v4"
-  _ "github.com/mattn/go-sqlite3"
+  _ "modernc.org/sqlite"
   "github.com/lestrrat-go/jwx/v2/jwa"
   "github.com/lestrrat-go/jwx/v2/jwk"
   "github.com/lestrrat-go/jwx/v2/jwt"
@@ -109,7 +109,7 @@ func InitiateGlobalVars() error {
   _ = PublicJWKS.AddKey(EDPublicJWK)
 
   log.Println("setting up db")
-  DBConn, err := sql.Open("sqlite3", DBFilePath)
+  DBConn, err := sql.Open("sqlite", DBFilePath)
   if err != nil {
     return err
   }

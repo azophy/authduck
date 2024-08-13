@@ -1,20 +1,15 @@
 version: 2
 builds:
 - env:
-  - CGO_ENABLED=1
-  - CC=gcc
+  - CGO_ENABLED=0
+  #- CC=gcc
   goos:
   - linux
-  # Authduck depends on sqlite, which require CGO. however cross-compiling cgo
-  # is hard. thus to keep things simple, for now we will only support linux-amd64.
-  # ref:
-  # - https://goreleaser.com/cookbooks/cgo-and-crosscompiling/
-  # - https://www.bytebase.com/blog/how-to-cross-compile-with-cgo-use-goreleaser-and-github-action/
-  #- windows
-  #- darwin
+  - windows
+  - darwin
   goarch:
   - amd64
-  #- arm64
+  - arm64
 
 dockers:
 - image_templates: ["ghcr.io/azophy/{{ .ProjectName }}:{{ .Version }}-amd64"]
