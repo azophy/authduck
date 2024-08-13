@@ -44,7 +44,7 @@ commonly for development. just prepare go version 1.22+ and run `go build`.
 - [ ] define accepted clients & users
 - [x] deployable as single binary
 - [x] dockerized in dockerhub
-- [ ] rate limiter to protect from abuse
+- [x] rate limiter to protect from abuse
 - [ ] scheduler to clear stale data
 - [ ] mock for popular OIDC providers: google, facebook, github, keycloak, ory, etc
 
