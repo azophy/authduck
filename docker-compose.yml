@@ -1,9 +1,8 @@
 version: "3.9"
-
 services:
-  authduck:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-    ports:
-      - '3000:3000'
+  coba:
+    image: alpine
+    volumes:
+      - .:/web
+    working_dir: /web
+    command: tail -f /dev/null

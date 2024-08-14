@@ -5,6 +5,26 @@ Authduck | Generic OIDC Callback
 {{end}}
 
 {{define "body"}}
+<style>
+.button {
+background: #f2f2f2;
+color: #191919;
+cursor: pointer;
+display: inline;
+margin-bottom: 1.125rem;
+margin-right: 0.45rem;
+padding: 0.4078125rem 1.4625rem;
+text-align: center;
+
+  border-radius: 3.6px;
+  display: inline-block;
+  padding: 0.61875rem;
+}
+ .btn-primary {
+   background: #275a90;
+     color: #fff;
+}
+  </style>
 <article>
   <figure>
     <img src="/assets/logo.svg" alt="authduck logo" style="max-height: 100px;"/>
@@ -13,28 +33,47 @@ Authduck | Generic OIDC Callback
   <p>
   This is the <strong>callback</strong> page of Authduck. Usually this page is accessed when the OIDC client initiating the authorization code flow.</p>
 
-  <a href="#" target="_blank" id="client_history_link">see client history</a>
-
   <form action="./callback" method="post">
+    <div x-data="callback_form">
+      <input type="hidden" x-ref="client_id" name="client_id">
 
-  <input type="hidden" id="client_id" name="client_id">
+      <nav>
+        <a :class="{ 'button': true, 'btn-primary': tab === 'quick' }" x-on:click.prevent="tab = 'quick'" href="#">Quick</a>
+        <a :class="{ 'button': true, 'btn-primary': tab === 'advanced' }" x-on:click.prevent="tab = 'advanced'" href="#">Advanced</a>
+        <a class="button btn-primary" href="#" target="_blank" x-ref="client_history_link">see client history</a>
 
-  <h2>Request</h2>
-  <p>This is the details of request made to this page:</p>
-  <textarea id="request_payload" style="width:100%" rows="5" disabled></textarea>
+      </nav>
+      <div x-show="tab === 'quick'">
+        <h3>Quick Form</h3>
+        <fieldset>
+          <label for="user_name">Name</label>
+          <input type="text" x-model="payload_name" @change="updateTokens">
 
-  <h2>Callback Payload</h2>
-  <p>This is the details of payload which would be used as callback query params:</p>
-  <textarea id="callback_payload" name="callback_payload" style="width:100%" rows="5"></textarea>
+          <label for="user_email">Email</label>
+          <input type="email" x-model="payload_email" @change="updateTokens">
+        </fieldset>
+      </div>
+      <div x-show="tab === 'advanced'">
+        <h3>Advanced Form</h3>
 
-  <h2>Code Exchange Payload</h2>
-  <p>This is the details of payload which would be returned when client exchanging the authorization code defined above. For the 'alg' field, available options are: RS256, ES384, and EdDSA.</p>
-  <label for="access_token_payload">Access Token Payload</label>
-  <textarea id="access_token_payload" name="access_token_payload" style="width:100%" rows="5"></textarea>
-  <label for="id_token_payload">ID Token Payload</label>
-  <textarea id="id_token_payload" name="id_token_payload" style="width:100%" rows="5"></textarea>
+        <h2>Request</h2>
+        <p>This is the details of request made to this page:</p>
+        <textarea id="request_payload" style="width:100%" rows="5" disabled x-model="requestPayload"></textarea>
 
-  <button type="submit">Continue OIDC Process</button>
+        <h2>Callback Payload</h2>
+        <p>This is the details of payload which would be used as callback query params:</p>
+        <textarea id="callback_payload" name="callback_payload" style="width:100%" rows="5" x-model="callbackPayload"></textarea>
+
+        <h2>Code Exchange Payload</h2>
+        <p>This is the details of payload which would be returned when client exchanging the authorization code defined above. For the 'alg' field, available options are: RS256, ES384, and EdDSA.</p>
+        <label for="access_token_payload">Access Token Payload</label>
+        <textarea id="access_token_payload" name="access_token_payload" style="width:100%" rows="5" x-model="accessTokenPayload"></textarea>
+        <label for="id_token_payload">ID Token Payload</label>
+        <textarea id="id_token_payload" name="id_token_payload" style="width:100%" rows="5" x-model="idTokenPayload"></textarea>
+      </div>
+    </div>
+
+    <button type="submit">Continue OIDC Process</button>
   </form>
 
 </article>
@@ -42,44 +81,67 @@ Authduck | Generic OIDC Callback
   // ref: https://cheatsheets.zip/generate-a-random-string-with-given-length
   const generateString = length => Array(length).fill('').map((v) => Math.random().toString(36).charAt(2)).join('')
 
-  const queryParams = new URLSearchParams(window.location.search)
-  const requestPayload = document.getElementById('request_payload')
-  const callbackPayload = document.getElementById('callback_payload')
-  const accessTokenPayload = document.getElementById('access_token_payload')
-  const idTokenPayload = document.getElementById('id_token_payload')
-  const authorizationCode = generateString(20)
-  const currentTimestamp = Math.floor(Date.now() / 1000)
+document.addEventListener('alpine:init', () => {
+	Alpine.data('callback_form', () => ({
+		tab: 'quick',
+		payload_name: 'John Doe',
+		payload_email: 'mail@example.com',
+    requestPayload: '',
+    callbackPayload: '',
+    accessTokenPayload: '',
+    idTokenPayload: '',
 
-  requestPayload.value = JSON.stringify(Object.fromEntries(queryParams.entries()), null, 2)
+    init() {
+      this.queryParams = new URLSearchParams(window.location.search)
+      this.authorizationCode = generateString(20)
+      this.currentTimestamp = Math.floor(Date.now() / 1000)
 
-  callbackPayload.value = JSON.stringify({
-    redirect_uri: queryParams.get('redirect_uri'),
-    state: queryParams.get('state'),
-    code: authorizationCode,
-  }, null, 2)
+      this.$refs.client_history_link.href = `/manage/history?id=${this.queryParams.get('client_id')}`
+      this.$refs.client_id.value = this.queryParams.get('client_id')
 
-  const accessTokenData = {
-    alg: 'RS256',
-    sub: 'random_subject_id',
-    iss: window.location.hostname,
-    aud: queryParams.get('redirect_uri'),
-    iat: currentTimestamp,
-    exp: currentTimestamp + 3600,
-  }
+      this.requestPayload = JSON.stringify(
+        Object.fromEntries(this.queryParams.entries()), null, 2
+      )
 
-  const idTokenData = {
-    ...accessTokenData,
+      this.callbackPayload = JSON.stringify({
+        redirect_uri: this.queryParams.get('redirect_uri'),
+        state: this.queryParams.get('state'),
+        code: this.authorizationCode,
+      }, null, 2)
 
-    // openid payload
-    name: 'John Doe',
-    email: 'mail@example.com',
-  }
+      this.accessTokenData = {
+        alg: 'RS256',
+        sub: 'random_subject_id',
+        iss: window.location.hostname,
+        aud: this.queryParams.get('redirect_uri'),
+        iat: this.currentTimestamp,
+        exp: this.currentTimestamp + 3600,
+      }
 
-  accessTokenPayload.value = JSON.stringify(accessTokenData, null, 2)
-  idTokenPayload.value = JSON.stringify(idTokenData, null, 2)
+      this.idTokenData = {
+        ...this.accessTokenData,
 
-  document.getElementById('client_history_link').href = `/manage/history?id=${queryParams.get('client_id')}`
-  document.getElementById('client_id').value = queryParams.get('client_id')
+        // openid payload
+        name: this.payload_name,
+        email: this.payload_email,
+      }
 
+      this.updateTokens()
+    },
+
+    updateTokens() {
+      this.idTokenData = {
+        ...this.idTokenData,
+
+        // openid payload
+        name: this.payload_name,
+        email: this.payload_email,
+      }
+
+      this.accessTokenPayload = JSON.stringify(this.accessTokenData, null, 2)
+      this.idTokenPayload = JSON.stringify(this.idTokenData, null, 2)
+    },
+	}))
+})
 </script>
 {{end}}
