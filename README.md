@@ -25,7 +25,7 @@ For many cases, using our public instance at <a target="_blank" href="https://au
 
 ### 1. Download available executables from releases page
 
-> Due to complications on cross-compiling go with CGO enabled, we currently only provide linux-amd64 distribution
+we provided executables for various platforms, just extract the file and run in. see our [releases](https://github.com/azophy/authduck/releases/) page.
 
 ### 2. Use available docker image
 
