@@ -36,13 +36,30 @@ func (t *TemplateRegistry) Render(w io.Writer, templateName string, data interfa
     return err
   }
 
+  finalData := map[string]interface{}{
+    "config": Config,
+  }
+
+  switch dataMap := data.(type) {
+    case map[string]interface{}:
+      for k,v := range(dataMap) {
+        finalData[k] = v
+      }
+    case echo.Map :
+      for k,v := range(dataMap) {
+        finalData[k] = v
+      }
+    default:
+      return errors.New("supplied data is not a map-like type")
+  }
+
   renderName := t.baseTemplatePaths[name]
   res := templateModifierRegex.FindStringSubmatch(templateName)
   if len(res) > 1 && res[1] == "partial" {
     renderName = "body"
   }
   log.Printf("rendername: %v\n", renderName)
-  err := tmpl.ExecuteTemplate(w, renderName, data)
+  err := tmpl.ExecuteTemplate(w, renderName, finalData)
   if err != nil {
     log.Println(err)
     return err
@@ -98,9 +115,9 @@ func SetupTemplateRegistry(parentPath string) *TemplateRegistry {
   }
 }
 
-func ServeResourceTemplate(path string, data interface{}) echo.HandlerFunc {
+func ServeResourceTemplate(path string) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		return c.Render(http.StatusOK, path, data)
+		return c.Render(http.StatusOK, path, nil)
   }
 }
 

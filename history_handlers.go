@@ -36,7 +36,7 @@ func historyDetailHandler(c echo.Context) error {
     template = template + "#partial"
   }
 
-  return c.Render(http.StatusOK, template, map[string]interface{}{
+  return c.Render(http.StatusOK, template, echo.Map{
     "histories": histories,
     "client_id": clientId,
   })

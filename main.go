@@ -23,7 +23,7 @@ func main() {
   e.Renderer = SetupTemplateRegistry("resources/views/*")
   RegisterHistoryHandlers(e)
 
-	e.GET("/", ServeResourceTemplate("resources/views/home.html", nil))
+	e.GET("/", ServeResourceTemplate("resources/views/home.html"))
 	e.GET("/assets/*", ServeResourceFolder("resources"))
 
 	e.GET("/.well-known/certs", func (c echo.Context) error {

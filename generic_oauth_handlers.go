@@ -18,7 +18,7 @@ func RegisterGenericOAuthHandlers(app *echo.Echo) {
   e := app.Group(routeParent)
 
 	e.GET("/.well-known/openid-configuration", openidconfigHandler)
-  e.GET("/auth/callback", ServeResourceTemplate("resources/views/generic_callback.html", nil))
+  e.GET("/auth/callback", ServeResourceTemplate("resources/views/generic_callback.html"))
 	e.POST("/auth/callback", callbackPostHandler)
 	e.POST("/auth/token", tokenHandler)
 }

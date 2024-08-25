@@ -12,7 +12,9 @@ import (
   "crypto/ed25519"
   "crypto/elliptic"
   "database/sql"
+  "html/template"
 
+  "github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
   _ "modernc.org/sqlite"
   "github.com/lestrrat-go/jwx/v2/jwa"
@@ -24,6 +26,7 @@ type ConfigType struct {
   AppPort string
   BaseUrl string
   RateLimit int
+  CustomScript template.HTML
 
   DBFilePath string
 
@@ -45,6 +48,7 @@ func (ct *ConfigType) Init() error {
   var err error
   ct.AppPort = GetEnvOrDefault("APP_PORT", "3000")
   ct.BaseUrl = GetEnvOrDefault("BASE_URL", "http://localhost:3000")
+  ct.CustomScript = template.HTML(GetEnvOrDefault("CUSTOM_SCRIPT", ""))
   ct.DBFilePath = GetEnvOrDefault("DB_FILE_PATH", ":memory:")
 
   RateLimitEnv := GetEnvOrDefault("RATE_LIMIT", "20")
@@ -130,6 +134,11 @@ func (ct *ConfigType) Init() error {
 }
 
 func InitiateGlobalVars() error {
+  err := godotenv.Load(".env")
+  if err != nil{
+    log.Fatalf("Error loading .env file: %s", err)
+  }
+
   // initiate global config
   Config.Init()
 
