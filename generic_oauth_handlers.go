@@ -24,6 +24,7 @@ func RegisterGenericOAuthHandlers(app *echo.Echo) {
 }
 
 func openidconfigHandler(c echo.Context) error {
+    BaseUrl := Config.BaseUrl
 		return c.JSON(http.StatusOK, echo.Map{
       "issuer": BaseUrl,
       "authorization_endpoint": BaseUrl + routeParent + "/auth/callback",

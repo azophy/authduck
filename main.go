@@ -3,7 +3,6 @@ package main
 import (
   "log"
 	"net/http"
-  "strconv"
 
   "golang.org/x/time/rate"
 	"github.com/labstack/echo/v4"
@@ -11,9 +10,6 @@ import (
 )
 
 func main() {
-  APP_PORT := GetEnvOrDefault("APP_PORT", "3000")
-  RATE_LIMIT := GetEnvOrDefault("RATE_LIMIT", "20")
-
   err := InitiateGlobalVars()
   if err != nil {
     log.Printf("failed initiating global vars: %s\n", err)
@@ -22,12 +18,7 @@ func main() {
 
 	e := echo.New()
 
-  rateLimitNumber, err := strconv.Atoi(RATE_LIMIT)
-  if err != nil {
-    log.Printf("failed initiating rate limiter: %s\n", err)
-    return
-  }
-  e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(rate.Limit(rateLimitNumber))))
+  e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(rate.Limit(Config.RateLimit))))
 
   e.Renderer = SetupTemplateRegistry("resources/views/*")
   RegisterHistoryHandlers(e)
@@ -36,12 +27,12 @@ func main() {
 	e.GET("/assets/*", ServeResourceFolder("resources"))
 
 	e.GET("/.well-known/certs", func (c echo.Context) error {
-		return c.JSON(http.StatusOK, PublicJWKS)
+		return c.JSON(http.StatusOK, Config.PublicJWKS)
   })
 
   RegisterGenericOAuthHandlers(e)
 
-	e.Logger.Fatal(e.Start(":" + APP_PORT))
+	e.Logger.Fatal(e.Start(":" + Config.AppPort))
 }
 
 

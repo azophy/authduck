@@ -20,29 +20,48 @@ import (
   "github.com/lestrrat-go/jwx/v2/jwt"
 )
 
-var (
-  BaseUrl = GetEnvOrDefault("BASE_URL", "http://localhost:3000")
-  JwkIdPrefix = GetEnvOrDefault("JWK_ID_PREFIX", "authduck")
+type ConfigType struct {
+  AppPort string
+  BaseUrl string
+  RateLimit int
 
+  DBFilePath string
+
+  JwkIdPrefix string
+  RSAKeyId, ECKeyId, EDKeyId string
+  RSAPrivateJWK, RSAPublicJWK, ECPrivateJWK, ECPublicJWK, EDPrivateJWK, EDPublicJWK jwk.Key
+  PublicJWKS jwk.Set
+}
+
+var (
+  Config ConfigType
+
+  DBConn *sql.DB
   HistoryRepository *HistoryModel
   CodeExchangeRepository *CodeExchangeModel
-
-  PublicJWKS = jwk.NewSet()
-  RSAPrivateJWK, RSAPublicJWK, ECPrivateJWK, ECPublicJWK, EDPrivateJWK, EDPublicJWK jwk.Key
-
-  timestamp = strconv.FormatInt(time.Now().Unix(), 10)
-  RSAKeyId = JwkIdPrefix + "-rsa-key-" + timestamp
-  ECKeyId = JwkIdPrefix + "-ec-key-" + timestamp
-  EDKeyId = JwkIdPrefix + "-ed-key-" + timestamp
-
-  DBFilePath = GetEnvOrDefault("DB_FILE_PATH", ":memory:")
-  DBConn *sql.DB
 )
 
-func InitiateGlobalVars() error {
-  // Unix() return int64, so we could not use Itoa(). Instead we used FormatInt() here
-
+func (ct *ConfigType) Init() error {
   var err error
+  ct.AppPort = GetEnvOrDefault("APP_PORT", "3000")
+  ct.BaseUrl = GetEnvOrDefault("BASE_URL", "http://localhost:3000")
+  ct.DBFilePath = GetEnvOrDefault("DB_FILE_PATH", ":memory:")
+
+  RateLimitEnv := GetEnvOrDefault("RATE_LIMIT", "20")
+  ct.RateLimit, err = strconv.Atoi(RateLimitEnv)
+  if err != nil {
+    log.Printf("failed parsing rate limiter config: %s\n", err)
+    return err
+  }
+
+  ct.JwkIdPrefix = GetEnvOrDefault("JWK_ID_PREFIX", "authduck")
+
+  timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+  ct.RSAKeyId = ct.JwkIdPrefix + "-rsa-key-" + timestamp
+  ct.ECKeyId = ct.JwkIdPrefix + "-ec-key-" + timestamp
+  ct.EDKeyId = ct.JwkIdPrefix + "-ed-key-" + timestamp
+  ct.PublicJWKS = jwk.NewSet()
+
   log.Println("generating RSA private key...")
   rsaPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)
   if err != nil {
@@ -50,14 +69,14 @@ func InitiateGlobalVars() error {
     return err
   }
 
-  RSAPrivateJWK, err = jwk.FromRaw(rsaPrivateKey)
+  ct.RSAPrivateJWK, err = jwk.FromRaw(rsaPrivateKey)
   if err != nil {
     log.Printf("failed to create RSA Private JWK: %s\n", err)
     return err
   }
-  RSAPrivateJWK.Set(jwk.KeyIDKey, RSAKeyId)
+  ct.RSAPrivateJWK.Set(jwk.KeyIDKey, ct.RSAKeyId)
 
-  RSAPublicJWK, err = RSAPrivateJWK.PublicKey()
+  ct.RSAPublicJWK, err = ct.RSAPrivateJWK.PublicKey()
   if err != nil {
     log.Printf("failed to create RSA Public JWK: %s\n", err)
     return err
@@ -70,14 +89,14 @@ func InitiateGlobalVars() error {
     return err
   }
 
-  ECPrivateJWK, err = jwk.FromRaw(ecPrivateKey)
+  ct.ECPrivateJWK, err = jwk.FromRaw(ecPrivateKey)
   if err != nil {
     log.Printf("failed to create EC Private JWK: %s\n", err)
     return err
   }
-  ECPrivateJWK.Set(jwk.KeyIDKey, ECKeyId)
+  ct.ECPrivateJWK.Set(jwk.KeyIDKey, ct.ECKeyId)
 
-  ECPublicJWK, err = ECPrivateJWK.PublicKey()
+  ct.ECPublicJWK, err = ct.ECPrivateJWK.PublicKey()
   if err != nil {
     log.Printf("failed to create EC Public JWK: %s\n", err)
     return err
@@ -90,26 +109,32 @@ func InitiateGlobalVars() error {
     return err
   }
 
-  EDPrivateJWK, err = jwk.FromRaw(edPrivateKey)
+  ct.EDPrivateJWK, err = jwk.FromRaw(edPrivateKey)
   if err != nil {
     log.Printf("failed to create ED Private JWK: %s\n", err)
     return err
   }
-  EDPrivateJWK.Set(jwk.KeyIDKey, EDKeyId)
+  ct.EDPrivateJWK.Set(jwk.KeyIDKey, ct.EDKeyId)
 
-  EDPublicJWK, err = jwk.FromRaw(edPublicKey)
+  ct.EDPublicJWK, err = jwk.FromRaw(edPublicKey)
   if err != nil {
     log.Printf("failed to create ED Public JWK: %s\n", err)
     return err
   }
-  EDPublicJWK.Set(jwk.KeyIDKey, EDKeyId)
+  ct.EDPublicJWK.Set(jwk.KeyIDKey, ct.EDKeyId)
 
-  _ = PublicJWKS.AddKey(RSAPublicJWK)
-  _ = PublicJWKS.AddKey(ECPublicJWK)
-  _ = PublicJWKS.AddKey(EDPublicJWK)
+  _ = ct.PublicJWKS.AddKey(ct.RSAPublicJWK)
+  _ = ct.PublicJWKS.AddKey(ct.ECPublicJWK)
+  _ = ct.PublicJWKS.AddKey(ct.EDPublicJWK)
+  return nil
+}
+
+func InitiateGlobalVars() error {
+  // initiate global config
+  Config.Init()
 
   log.Println("setting up db")
-  DBConn, err := sql.Open("sqlite", DBFilePath)
+  DBConn, err := sql.Open("sqlite", Config.DBFilePath)
   if err != nil {
     return err
   }
@@ -146,17 +171,17 @@ func CreateJWT(alg jwa.SignatureAlgorithm, token jwt.Token) ([]byte, error) {
   if (alg == jwa.RS256) {
     return jwt.Sign(
       token,
-      jwt.WithKey(jwa.RS256, RSAPrivateJWK),
+      jwt.WithKey(jwa.RS256, Config.RSAPrivateJWK),
     )
   } else if (alg == jwa.ES384) {
     return jwt.Sign(
       token,
-      jwt.WithKey(jwa.ES384, ECPrivateJWK),
+      jwt.WithKey(jwa.ES384, Config.ECPrivateJWK),
     )
   } else if (alg == jwa.EdDSA) {
     return jwt.Sign(
       token,
-      jwt.WithKey(jwa.EdDSA, EDPrivateJWK),
+      jwt.WithKey(jwa.EdDSA, Config.EDPrivateJWK),
     )
   }
 
