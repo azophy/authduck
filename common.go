@@ -64,7 +64,7 @@ func (ct *ConfigType) Init() error {
 		return err
 	}
 
-	ct.CorsOrigins = strings.Split(GetEnvOrDefault("CORS_ORIGINS", ""), ";")
+	ct.CorsOrigins = strings.Split(GetEnvOrDefault("CORS_ORIGINS", "*"), ";")
 
 	ct.JwkIdPrefix = GetEnvOrDefault("JWK_ID_PREFIX", "authduck")
 
@@ -144,18 +144,10 @@ func (ct *ConfigType) Init() error {
 func (ct *ConfigType) GetCORSConfig() middleware.CORSConfig {
 	allowedMethods := []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete}
 
-	log.Printf("origij lemgthv %v", len(ct.CorsOrigins))
-
-	if len(ct.CorsOrigins) > 0 {
-		return middleware.CORSConfig{
-			AllowOrigins: ct.CorsOrigins,
-			AllowMethods: allowedMethods,
-		}
-	} else {
-		return middleware.CORSConfig{
-			AllowMethods: allowedMethods,
-		}
-	}
+  return middleware.CORSConfig{
+    AllowOrigins: ct.CorsOrigins,
+    AllowMethods: allowedMethods,
+  }
 }
 
 func InitiateGlobalVars() error {
