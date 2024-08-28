@@ -152,12 +152,7 @@ func (ct *ConfigType) GetCORSConfig() middleware.CORSConfig {
       AllowMethods:    allowedMethods,
     }
   } else {
-    allowAllOrigin := func(origin string) (bool, error) {
-      return true, nil
-    }
-
     return middleware.CORSConfig{
-      AllowOriginFunc: allowAllOrigin,
       AllowMethods:    allowedMethods,
     }
   }
