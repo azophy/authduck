@@ -49,6 +49,8 @@ func (t *TemplateRegistry) Render(w io.Writer, templateName string, data interfa
       for k,v := range(dataMap) {
         finalData[k] = v
       }
+    case nil:
+      // pass
     default:
       return errors.New("supplied data is not a map-like type")
   }
