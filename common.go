@@ -5,6 +5,7 @@ import (
   "log"
   "time"
   "errors"
+  "strings"
   "strconv"
   "crypto/rsa"
   "crypto/rand"
@@ -13,9 +14,11 @@ import (
   "crypto/elliptic"
   "database/sql"
   "html/template"
+  "net/http"
 
   "github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+  "github.com/labstack/echo/v4/middleware"
   _ "modernc.org/sqlite"
   "github.com/lestrrat-go/jwx/v2/jwa"
   "github.com/lestrrat-go/jwx/v2/jwk"
@@ -60,6 +63,8 @@ func (ct *ConfigType) Init() error {
     log.Printf("failed parsing rate limiter config: %s\n", err)
     return err
   }
+
+  ct.CorsOrigins = strings.Split(GetEnvOrDefault("CORS_ORIGINS", ""), ";")
 
   ct.JwkIdPrefix = GetEnvOrDefault("JWK_ID_PREFIX", "authduck")
 
@@ -134,6 +139,28 @@ func (ct *ConfigType) Init() error {
   _ = ct.PublicJWKS.AddKey(ct.ECPublicJWK)
   _ = ct.PublicJWKS.AddKey(ct.EDPublicJWK)
   return nil
+}
+
+func (ct *ConfigType) GetCORSConfig() middleware.CORSConfig {
+  allowedMethods := []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete}
+
+  log.Printf("origij lemgthv %v", len(ct.CorsOrigins))
+
+  if len(ct.CorsOrigins) > 0 {
+    return middleware.CORSConfig{
+      AllowOrigins: ct.CorsOrigins,
+      AllowMethods:    allowedMethods,
+    }
+  } else {
+    allowAllOrigin := func(origin string) (bool, error) {
+      return true, nil
+    }
+
+    return middleware.CORSConfig{
+      AllowOriginFunc: allowAllOrigin,
+      AllowMethods:    allowedMethods,
+    }
+  }
 }
 
 func InitiateGlobalVars() error {
