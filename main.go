@@ -17,8 +17,10 @@ func main() {
   }
 
 	e := echo.New()
+  e.Debug = Config.IsAppDebug
 
   e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(rate.Limit(Config.RateLimit))))
+  e.Use(middleware.CORSWithConfig(Config.GetCORSConfig()))
 
   e.Renderer = SetupTemplateRegistry("resources/views/*")
   RegisterHistoryHandlers(e)

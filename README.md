@@ -37,6 +37,10 @@ docker run -it ghcr.io/azophy/authduck:latest
 
 commonly for development. just prepare go version 1.22+ and run `go build`.
 
+## Configurations
+
+Using environment variables or via `.env` file. please see `.env.example` for available options
+
 ## Features
 - [x] well known endpoint
 - [x] jwks endpoint

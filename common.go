@@ -27,6 +27,8 @@ type ConfigType struct {
   BaseUrl string
   RateLimit int
   CustomScript template.HTML
+  CorsOrigins []string
+  IsAppDebug bool
 
   DBFilePath string
 
@@ -50,6 +52,7 @@ func (ct *ConfigType) Init() error {
   ct.BaseUrl = GetEnvOrDefault("BASE_URL", "http://localhost:3000")
   ct.CustomScript = template.HTML(GetEnvOrDefault("CUSTOM_SCRIPT", ""))
   ct.DBFilePath = GetEnvOrDefault("DB_FILE_PATH", ":memory:")
+  ct.IsAppDebug = (GetEnvOrDefault("APP_DEBUG", "false") == "true")
 
   RateLimitEnv := GetEnvOrDefault("RATE_LIMIT", "20")
   ct.RateLimit, err = strconv.Atoi(RateLimitEnv)
