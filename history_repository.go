@@ -2,11 +2,11 @@
 package main
 
 import (
-  "log"
-  "database/sql"
-  //"errors"
+	"database/sql"
+	"log"
+	//"errors"
 
-  _ "modernc.org/sqlite"
+	_ "modernc.org/sqlite"
 )
 
 // var (
@@ -16,31 +16,31 @@ import (
 // ErrDeleteFailed = errors.New("delete failed")
 // )
 type History struct {
-  ID int
-  Timestamp string
-  ClientId string
-  HTTPMethod string
-  Url string
-  Headers string
-  Body string
-  QueryParams string
+	ID          int
+	Timestamp   string
+	ClientId    string
+	HTTPMethod  string
+	Url         string
+	Headers     string
+	Body        string
+	QueryParams string
 }
 
 type HistoryModel struct {
-  db *sql.DB
+	db *sql.DB
 }
 
 func NewHistoryModel(db *sql.DB) (*HistoryModel, error) {
-  newInstance :=  &HistoryModel{
-    db: db,
-  }
+	newInstance := &HistoryModel{
+		db: db,
+	}
 
-  newInstance.Migrate()
-  return newInstance, nil
+	newInstance.Migrate()
+	return newInstance, nil
 }
 
 func (r *HistoryModel) Migrate() error {
-  query := `
+	query := `
     CREATE TABLE IF NOT EXISTS history(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -53,50 +53,49 @@ func (r *HistoryModel) Migrate() error {
     );
   `
 
-  _, err := r.db.Exec(query)
-  return err
+	_, err := r.db.Exec(query)
+	return err
 }
 
 func (r *HistoryModel) Record(clientId, httpMethod, url, headers, body, queryParams string) error {
-  res, err := r.db.Exec(`
+	res, err := r.db.Exec(`
     INSERT INTO history(client_id, http_method, url, headers, body, query_params)
     VALUES(?, ?, ?, ?, ?, ?)
   `, clientId, httpMethod, url, headers, body, queryParams)
-  if err != nil {
-    return err
-  }
+	if err != nil {
+		return err
+	}
 
-  id, _ := res.LastInsertId()
-  log.Printf("inserted history with client id %v & history id %v\n", clientId, id)
+	id, _ := res.LastInsertId()
+	log.Printf("inserted history with client id %v & history id %v\n", clientId, id)
 
-  return nil
+	return nil
 }
 
 func (r *HistoryModel) All(clientId string, from string) ([]History, error) {
-  rows, err := r.db.Query("SELECT * FROM history WHERE client_id = ? ORDER BY timestamp DESC LIMIT 10 OFFSET ?", clientId, from)
-  if err != nil {
-    return nil, err
-  }
-  defer rows.Close()
+	rows, err := r.db.Query("SELECT * FROM history WHERE client_id = ? ORDER BY timestamp DESC LIMIT 10 OFFSET ?", clientId, from)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-  var all []History
-  for rows.Next() {
-    var history History
-    if err := rows.Scan(
-      &history.ID,
-      &history.Timestamp,
-      &history.ClientId,
-      &history.HTTPMethod,
-      &history.Url,
-      &history.Headers,
-      &history.Body,
-      &history.QueryParams,
-    ); err != nil {
-      return nil, err
-    }
-    all = append(all, history)
-  }
+	var all []History
+	for rows.Next() {
+		var history History
+		if err := rows.Scan(
+			&history.ID,
+			&history.Timestamp,
+			&history.ClientId,
+			&history.HTTPMethod,
+			&history.Url,
+			&history.Headers,
+			&history.Body,
+			&history.QueryParams,
+		); err != nil {
+			return nil, err
+		}
+		all = append(all, history)
+	}
 
-  return all, nil
+	return all, nil
 }
-

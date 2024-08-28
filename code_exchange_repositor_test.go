@@ -36,7 +36,7 @@ func TestCodeExchangeModelMigrate(t *testing.T) {
 func TestCodeExchangeModelAddAndGetOne(t *testing.T) {
 	model := setupCodeExchangeTestDB(t)
 
-  err := model.Add("client1", "code1", EXAMPLE_PAYLOAD)
+	err := model.Add("client1", "code1", EXAMPLE_PAYLOAD)
 	if err != nil {
 		t.Errorf("inserting record produced an error: %v", err)
 	}
@@ -54,8 +54,7 @@ func TestCodeExchangeModelAddAndGetOne(t *testing.T) {
 	if err != nil {
 		t.Errorf("retrieving records produced an error: %v", err)
 	}
-  if (item.Payload != EXAMPLE_PAYLOAD) {
-    t.Errorf("expected record with payload `%v`, got %v", EXAMPLE_PAYLOAD, item.Payload)
-  }
+	if item.Payload != EXAMPLE_PAYLOAD {
+		t.Errorf("expected record with payload `%v`, got %v", EXAMPLE_PAYLOAD, item.Payload)
+	}
 }
-
