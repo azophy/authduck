@@ -144,24 +144,15 @@ func (ct *ConfigType) Init() error {
 func (ct *ConfigType) GetCORSConfig() middleware.CORSConfig {
 	allowedMethods := []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete}
 
-  return middleware.CORSConfig{
-    AllowOrigins: ct.CorsOrigins,
-    AllowMethods: allowedMethods,
-  }
+	return middleware.CORSConfig{
+		AllowOrigins: ct.CorsOrigins,
+		AllowMethods: allowedMethods,
+	}
 }
 
-func InitiateGlobalVars() error {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Printf("Error loading .env file: %s", err)
-		log.Println("Continuing without env file...")
-	}
-
-	// initiate global config
-	Config.Init()
-
+func InitiateDatabase(dbPath string) error {
 	log.Println("setting up db")
-	DBConn, err := sql.Open("sqlite", Config.DBFilePath)
+	DBConn, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		return err
 	}
@@ -175,6 +166,23 @@ func InitiateGlobalVars() error {
 	CodeExchangeRepository, err = NewCodeExchangeModel(DBConn)
 	if err != nil {
 		log.Printf("failed to initiate CodeExchangeModel: %s\n", err)
+		return err
+	}
+
+	return nil
+}
+
+func InitiateGlobalVars() error {
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Printf("Error loading .env file: %s", err)
+		log.Println("Continuing without env file...")
+	}
+
+	// initiate global config
+	Config.Init()
+	err = InitiateDatabase(Config.DBFilePath)
+	if err != nil {
 		return err
 	}
 

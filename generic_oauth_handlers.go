@@ -351,18 +351,31 @@ func callbackPostHandler(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, redirectUrl.String())
 }
 
-func tokenHandler(c echo.Context) error {
-	client_id := c.FormValue("client_id")
-	code := c.FormValue("code")
+type tokenRequest struct {
+	ClientId     string `json:"client_id" form:"client_id" query:"client_id"`
+	ClientSecret string `json:"client_secret" form:"client_secret" query:"client_secret"`
+	Code         string `json:"code" form:"code" query:"code"`
+	GrantType    string `json:"grant_type" form:"grant_type" query:"grant_type"`
+	Audience     string `json:"audience" form:"audience" query:"audience"`
+}
 
-	codeExchange, err := CodeExchangeRepository.GetOne(client_id, code)
+func tokenHandler(c echo.Context) error {
+	var payload tokenRequest
+	err := c.Bind(&payload)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "bad request")
+	}
+
+	log.Printf("payload: %v", payload)
+
+	codeExchange, err := CodeExchangeRepository.GetOne(payload.ClientId, payload.Code)
 	if err != nil {
 		log.Printf("error on retrieving exchange payload: %v", err)
 
 		if errors.Is(err, ErrNotExists) {
 			return c.JSON(http.StatusNotFound, echo.Map{
 				"error":             "not found",
-				"error_description": "client id & secret pair not found",
+				"error_description": "client id-secret pair not found",
 			})
 		} else {
 			return err
