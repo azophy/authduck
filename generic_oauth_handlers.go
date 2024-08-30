@@ -34,6 +34,21 @@ var (
 		//"code token",
 		//"code id_token token",
 	}
+	SUPPORTED_SIGNING_ALGS = []string{
+		//"PS384",
+		//"ES384",
+		//"RS384",
+		//"HS256",
+		//"HS512",
+		"ES256",
+		"RS256",
+		//"HS384",
+		//"ES512",
+		//"PS256",
+		//"PS512",
+		//"RS512",
+		"EdDSA",
+	}
 )
 
 func RegisterGenericOAuthHandlers(app *echo.Echo) {
@@ -64,20 +79,7 @@ func getOpenidConfig() echo.Map {
 		//"public",
 		//"pairwise",
 		//},
-		"id_token_signing_alg_values_supported": []string{
-			"PS384",
-			"ES384",
-			//"RS384",
-			//"HS256",
-			//"HS512",
-			//"ES256",
-			"RS256",
-			//"HS384",
-			//"ES512",
-			//"PS256",
-			//"PS512",
-			//"RS512",
-		},
+		"id_token_signing_alg_values_supported": SUPPORTED_SIGNING_ALGS,
 		//"id_token_encryption_alg_values_supported": []string{
 		//"RSA-OAEP",
 		//"RSA-OAEP-256",
@@ -374,14 +376,7 @@ func tokenHandler(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "bad request")
 	}
 
-	found := false
-	for _, v := range SUPPORTED_GRANT_TYPES {
-		if v == payload.GrantType {
-			found = true
-			break
-		}
-	}
-	if !found {
+	if !IsItemInList(payload.GrantType, SUPPORTED_GRANT_TYPES) {
 		return c.JSON(http.StatusBadRequest, echo.Map{
 			"error": "bad request", "error_description": "invalid grant type"})
 	}

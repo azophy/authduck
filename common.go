@@ -235,3 +235,13 @@ func CreateJwtFromJson(rawPayload string) ([]byte, error) {
 	}
 	return CreateJWT(jwa.SignatureAlgorithm(alg.(string)), token)
 }
+
+// copied from https://stackoverflow.com/a/73025349
+func IsItemInList[T comparable](x T, arr []T) bool {
+	for _, v := range arr {
+		if v == x {
+			return true
+		}
+	}
+	return false
+}

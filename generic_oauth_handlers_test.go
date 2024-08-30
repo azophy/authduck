@@ -50,13 +50,13 @@ func TestTokenHandler(t *testing.T) {
 		},
 		{
 			name:               "Client Id Not found",
-			requestBody:        `{"client_id":"invalidClientId", "code":"someCode"}`,
+			requestBody:        `{"client_id":"invalidClientId", "code":"someCode","grant_type":"authorization_code"}`,
 			expectedStatusCode: http.StatusNotFound,
 			expectedResponse:   `{"error":"not found","error_description":"client id-secret pair not found"}`,
 		},
 		{
 			name:               "Code Not found",
-			requestBody:        `{"client_id":"validClientId", "code":"someCode"}`,
+			requestBody:        `{"client_id":"validClientId", "code":"someCode","grant_type":"authorization_code"}`,
 			expectedStatusCode: http.StatusNotFound,
 			expectedResponse:   `{"error":"not found","error_description":"client id-secret pair not found"}`,
 		},
