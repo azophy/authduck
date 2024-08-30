@@ -52,7 +52,7 @@ var (
 func (ct *ConfigType) Init() error {
 	var err error
 	ct.AppPort = GetEnvOrDefault("APP_PORT", "3000")
-	ct.BaseUrl = GetEnvOrDefault("BASE_URL", "http://localhost:" + ct.AppPort)
+	ct.BaseUrl = GetEnvOrDefault("BASE_URL", "http://localhost:"+ct.AppPort)
 	ct.CustomScript = template.HTML(GetEnvOrDefault("CUSTOM_SCRIPT", ""))
 	ct.DBFilePath = GetEnvOrDefault("DB_FILE_PATH", ":memory:")
 	ct.IsAppDebug = (GetEnvOrDefault("APP_DEBUG", "false") == "true")

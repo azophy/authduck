@@ -32,9 +32,15 @@ func TestTokenHandler(t *testing.T) {
 	}{
 		{
 			name:               "Valid request",
-			requestBody:        `{"client_id":"validClientId", "code":"validCode"}`,
+			requestBody:        `{"client_id":"validClientId", "code":"validCode","grant_type":"authorization_code"}`,
 			expectedStatusCode: http.StatusOK,
 			expectedResponse:   `{"id_token":"valid_id_token","access_token":"valid_access_token"}`,
+		},
+		{
+			name:               "Invalid grant type",
+			requestBody:        `{"client_id":"validClientId", "code":"validCode","grant_type":"invalid_grant_type"}`,
+			expectedStatusCode: http.StatusBadRequest,
+			expectedResponse:   `{"error":"bad request","error_description":"invalid grant type"}`,
 		},
 		{
 			name:               "Invalid JSON request",

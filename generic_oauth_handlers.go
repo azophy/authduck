@@ -14,6 +14,28 @@ const (
 	routeParent = "/case/generic"
 )
 
+var (
+	SUPPORTED_GRANT_TYPES = []string{
+		"authorization_code",
+		//"implicit",
+		//"refresh_token",
+		//"password",
+		//"client_credentials",
+		//"urn:ietf:params:oauth:grant-type:device_code",
+		//"urn:openid:params:grant-type:ciba",
+	}
+	SUPPORTED_RESPONSE_TYPES = []string{
+		"code",
+		"none",
+		"id_token",
+		"token",
+		"id_token token",
+		//"code id_token",
+		//"code token",
+		//"code id_token token",
+	}
+)
+
 func RegisterGenericOAuthHandlers(app *echo.Echo) {
 	e := app.Group(routeParent)
 
@@ -23,9 +45,9 @@ func RegisterGenericOAuthHandlers(app *echo.Echo) {
 	e.POST("/auth/token", tokenHandler)
 }
 
-func openidconfigHandler(c echo.Context) error {
+func getOpenidConfig() echo.Map {
 	BaseUrl := Config.BaseUrl
-	return c.JSON(http.StatusOK, echo.Map{
+	return echo.Map{
 		"issuer":                 BaseUrl,
 		"authorization_endpoint": BaseUrl + routeParent + "/auth/callback",
 		"token_endpoint":         BaseUrl + routeParent + "/auth/token",
@@ -36,43 +58,26 @@ func openidconfigHandler(c echo.Context) error {
 		//"frontchannel_logout_supported": true,
 		"jwks_uri": BaseUrl + "/.well-known/certs",
 		//"check_session_iframe": BaseUrl + "/protocol/openid-connect/login-status-iframe.html",
-		"grant_types_supported": []string{
-			"authorization_code",
-			//"implicit",
-			//"refresh_token",
-			//"password",
-			//"client_credentials",
-			//"urn:ietf:params:oauth:grant-type:device_code",
-			//"urn:openid:params:grant-type:ciba",
-		},
-		//"response_types_supported": []string{
-		//"code",
-		//"none",
-		//"id_token",
-		//"token",
-		//"id_token token",
-		//"code id_token",
-		//"code token",
-		//"code id_token token",
-		//},
+		"grant_types_supported":    SUPPORTED_GRANT_TYPES,
+		"response_types_supported": SUPPORTED_RESPONSE_TYPES,
 		//"subject_types_supported": []string{
 		//"public",
 		//"pairwise",
 		//},
-		//"id_token_signing_alg_values_supported": []string{
-		//"PS384",
-		//"ES384",
-		//"RS384",
-		//"HS256",
-		//"HS512",
-		//"ES256",
-		//"RS256",
-		//"HS384",
-		//"ES512",
-		//"PS256",
-		//"PS512",
-		//"RS512",
-		//},
+		"id_token_signing_alg_values_supported": []string{
+			"PS384",
+			"ES384",
+			//"RS384",
+			//"HS256",
+			//"HS512",
+			//"ES256",
+			"RS256",
+			//"HS384",
+			//"ES512",
+			//"PS256",
+			//"PS512",
+			//"RS512",
+		},
 		//"id_token_encryption_alg_values_supported": []string{
 		//"RSA-OAEP",
 		//"RSA-OAEP-256",
@@ -297,7 +302,10 @@ func openidconfigHandler(c echo.Context) error {
 		//"pushed_authorization_request_endpoint": "https://example.com/protocol/openid-connect/ext/par/request",
 		//"backchannel_authentication_endpoint": "https://example.com/protocol/openid-connect/ext/ciba/auth",
 		//},
-	})
+	}
+}
+func openidconfigHandler(c echo.Context) error {
+	return c.JSON(http.StatusOK, getOpenidConfig())
 }
 
 func callbackPostHandler(c echo.Context) error {
@@ -364,6 +372,18 @@ func tokenHandler(c echo.Context) error {
 	err := c.Bind(&payload)
 	if err != nil {
 		return c.String(http.StatusBadRequest, "bad request")
+	}
+
+	found := false
+	for _, v := range SUPPORTED_GRANT_TYPES {
+		if v == payload.GrantType {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return c.JSON(http.StatusBadRequest, echo.Map{
+			"error": "bad request", "error_description": "invalid grant type"})
 	}
 
 	codeExchange, err := CodeExchangeRepository.GetOne(payload.ClientId, payload.Code)
