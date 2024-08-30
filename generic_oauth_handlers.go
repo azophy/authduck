@@ -366,8 +366,6 @@ func tokenHandler(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "bad request")
 	}
 
-	log.Printf("payload: %v", payload)
-
 	codeExchange, err := CodeExchangeRepository.GetOne(payload.ClientId, payload.Code)
 	if err != nil {
 		log.Printf("error on retrieving exchange payload: %v", err)

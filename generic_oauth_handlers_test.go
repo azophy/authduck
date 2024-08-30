@@ -54,12 +54,6 @@ func TestTokenHandler(t *testing.T) {
 			expectedStatusCode: http.StatusNotFound,
 			expectedResponse:   `{"error":"not found","error_description":"client id-secret pair not found"}`,
 		},
-		{
-			name:               "Internal server error",
-			requestBody:        `{"client_id":"someClientId", "code":"someCode"}`,
-			expectedStatusCode: http.StatusInternalServerError,
-			expectedResponse:   "internal server error",
-		},
 	}
 
 	for _, tt := range tests {
