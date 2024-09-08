@@ -8,6 +8,7 @@ import (
 	"crypto/rsa"
 	"database/sql"
 	"errors"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -152,9 +153,13 @@ func (ct *ConfigType) GetCORSConfig() middleware.CORSConfig {
 
 func InitiateDatabase(dbPath string) error {
 	log.Println("setting up db")
-	DBConn, err := sql.Open("sqlite", dbPath)
+	var err error
+	DBConn, err = sql.Open("sqlite", dbPath)
 	if err != nil {
 		return err
+	}
+	if DBConn == nil {
+		return errors.New("DBConn is nil")
 	}
 
 	HistoryRepository, err = NewHistoryModel(DBConn)
@@ -165,10 +170,10 @@ func InitiateDatabase(dbPath string) error {
 
 	CodeExchangeRepository, err = NewCodeExchangeModel(DBConn)
 	if err != nil {
-		log.Printf("failed to initiate CodeExchangeModel: %s\n", err)
-		return err
+		return fmt.Errorf("failed to initiate CodeExchangeModel: %v", err)
 	}
 
+	log.Println("Database setup completed successfully")
 	return nil
 }
 
