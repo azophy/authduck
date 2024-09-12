@@ -123,12 +123,6 @@ func ServeResourceTemplate(path string) echo.HandlerFunc {
 	}
 }
 
-func ServeResourceFile(path string) echo.HandlerFunc {
-	return echo.WrapHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFileFS(w, r, embededFiles, path)
-	}))
-}
-
 func ServeResourceFolder(path string) echo.HandlerFunc {
 	fsys, err := fs.Sub(embededFiles, path)
 	if err != nil {

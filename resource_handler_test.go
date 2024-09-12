@@ -1,56 +1,133 @@
 package main
 
 import (
-	"embed"
+	//"database/sql"
+	//"encoding/base64"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
 
-//go:embed resources/views/_tests
-var testEmbeddedFiles embed.FS
-
-func TestSetupTemplateRegistry(t *testing.T) {
-	// Override the global embededFiles variable with our test files
-	embededFiles = testEmbeddedFiles
-
-	registry := SetupTemplateRegistry("resources/views/_tests")
-
-	// Test the number of templates
-	assert.Len(t, registry.templates, 2, "Expected 2 templates in the registry")
-
-	// Test the contents of the templates map
-	expectedTemplates := []string{
-		"resources/views/_tests/template1.html",
-		"resources/views/_tests/template2.html",
-	}
-	for _, templateName := range expectedTemplates {
-		assert.Contains(t, registry.templates, templateName, "Expected template %s not found in registry", templateName)
-	}
-
-	// Test the contents of the baseTemplatePaths map
-	expectedBaseTemplatePaths := map[string]string{
-		"resources/views/_tests/template1.html": "layout.html",
-		"resources/views/_tests/template2.html": "body",
-	}
-	assert.Equal(t, expectedBaseTemplatePaths, registry.baseTemplatePaths, "BaseTemplatePaths do not match expected values")
+type testCase struct {
+	name                        string
+	handlerFunc                 echo.HandlerFunc
+	requestUrl                  string
+	expectedStatusCode          int
+	expectedResponseContains    []string
+	expectedResponseNotContains []string
+	expectedErrorString         string
 }
 
-// TestSetupTemplateRegistryEmptyDirectory tests the behavior when given an empty directory
-func TestSetupTemplateRegistryEmptyDirectory(t *testing.T) {
-	registry := SetupTemplateRegistry("resources/views/_tests/empty")
+func TestServeResourceFolder(t *testing.T) {
+	// Setup
+	e := echo.New()
 
-	assert.Empty(t, registry.templates, "Expected no templates for an empty directory")
-	assert.Empty(t, registry.baseTemplatePaths, "Expected no base template paths for an empty directory")
+	testHandler := ServeResourceFolder("resources")
+
+	tests := []testCase{
+		{
+			name:                        "Valid request",
+			handlerFunc:                 testHandler,
+			requestUrl:                  "/assets/tacit.min.css",
+			expectedStatusCode:          http.StatusOK,
+			expectedResponseContains:    nil,
+			expectedResponseNotContains: nil,
+			expectedErrorString:         "",
+		},
+		{
+			name:                        "Not Found",
+			handlerFunc:                 testHandler,
+			requestUrl:                  "/non-existing-url",
+			expectedStatusCode:          http.StatusNotFound,
+			expectedResponseContains:    nil,
+			expectedResponseNotContains: nil,
+			expectedErrorString:         "",
+		},
+	}
+
+	runTests(tests, e, t)
 }
 
-// TestSetupTemplateRegistryInvalidTemplate tests the behavior with an invalid template file
-func TestSetupTemplateRegistryInvalidTemplate(t *testing.T) {
-	// Override the global embededFiles variable with our test files including an invalid template
-	embededFiles = testEmbeddedFiles
+func TestServeResourceTemplate(t *testing.T) {
+	// Setup
+	e := echo.New()
+	e.Renderer = SetupTemplateRegistry("resources/views/*")
 
-	registry := SetupTemplateRegistry("resources/views/_tests/invalid")
+	tests := []testCase{
+		{
+			name:               "Valid full template",
+			handlerFunc:        ServeResourceTemplate("resources/views/home.html"),
+			requestUrl:         "/",
+			expectedStatusCode: http.StatusOK,
+			expectedResponseContains: []string{
+				"<p>To start playing with this tools, you could use any OIDC client you have",
+				`<script src="/assets/htmx.min.js"></script>`, // script in layout_base.html
+			},
+			expectedResponseNotContains: []string{
+				"random non-existing string",
+			},
+			expectedErrorString: "",
+		},
+		{
+			name:                        "Not Existing Template",
+			handlerFunc:                 ServeResourceTemplate("non-existing.html"),
+			requestUrl:                  "/",
+			expectedStatusCode:          http.StatusOK,
+			expectedResponseContains:    nil,
+			expectedResponseNotContains: nil,
+			expectedErrorString:         "Template not found -> non-existing.html",
+		},
+		{
+			name:               "Partial Template",
+			handlerFunc:        ServeResourceTemplate("resources/views/home.html#partial"),
+			requestUrl:         "/",
+			expectedStatusCode: http.StatusOK,
+			expectedResponseContains: []string{
+				"<p>To start playing with this tools, you could use any OIDC client you have",
+			},
+			expectedResponseNotContains: []string{
+				`<script src="/assets/htmx.min.js"></script>`, // script in layout_base.html
+				"random non-existing string",
+			},
+			expectedErrorString: "",
+		},
+	}
 
-	assert.Len(t, registry.templates, 1, "Expected 1 valid template in the registry")
-	assert.NotContains(t, registry.templates, "resources/views/_tests/invalid/invalid_template.html", "Invalid template should not be in the registry")
+	runTests(tests, e, t)
+}
+
+func runTests(testcases []testCase, e *echo.Echo, t *testing.T) {
+	for _, tt := range testcases {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, tt.requestUrl, nil)
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+
+			err := tt.handlerFunc(c)
+			if tt.expectedErrorString != "" {
+				assert.EqualError(t, err, tt.expectedErrorString)
+			} else {
+				assert.NoErrorf(t, err, "handler returned error: %v", err)
+			}
+
+			if rec.Code != tt.expectedStatusCode {
+				t.Errorf("expected status %d, got %d", tt.expectedStatusCode, rec.Code)
+			}
+
+			if tt.expectedResponseContains != nil {
+				for _, contains := range tt.expectedResponseContains {
+					assert.Contains(t, rec.Body.String(), contains)
+				}
+			}
+
+			if tt.expectedResponseNotContains != nil {
+				for _, contains := range tt.expectedResponseNotContains {
+					assert.NotContains(t, rec.Body.String(), contains)
+				}
+			}
+		})
+	}
 }
