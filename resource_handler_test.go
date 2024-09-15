@@ -1,15 +1,23 @@
 package main
 
 import (
-	"database/sql"
-	"encoding/base64"
+	//"database/sql"
+	//"encoding/base64"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/labstack/echo/v4"
-	"github.com/stretchr/testify/assert"
+	//"github.com/stretchr/testify/assert"
 )
+
+type testCase struct {
+  name               string
+  requestUrl        string
+  //requestBody        string
+  expectedStatusCode int
+  //expectedResponse   string
+}
 
 
 func TestServeResourceFolder(t *testing.T) {
@@ -18,15 +26,46 @@ func TestServeResourceFolder(t *testing.T) {
 
   testHandler := ServeResourceFolder("resources")
 
-	req := httptest.NewRequest(http.MethodGet, "/assets/tacit.min.css", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+	tests := []testCase {
+		{
+			name:               "Valid request",
+			requestUrl:        `/assets/tacit.min.css`,
+			//requestBody:        `/assets/tacit.min.css`,
+			expectedStatusCode: http.StatusOK,
+			//expectedResponse:   `{"id_token":"valid_id_token","access_token":"valid_access_token"}`,
+		},
+		{
+			name:               "Not found",
+			requestUrl:        `/random-non-existing-file.min.css`,
+			expectedStatusCode: http.StatusNotFound,
+			//expectedResponse:   `{"id_token":"valid_id_token","access_token":"valid_access_token"}`,
+		},
+	}
 
-	// Test
-	if assert.NoError(t, testHandler(c)) {
-		assert.Equal(t, http.StatusOK, rec.Code)
+  runTests(tests, testHandler, e, t)
+}
 
-		// You can add more specific assertions here about the response body
-		// For example, you could parse the JSON response and check its contents
+func runTests(testcases []testCase, testHandler echo.HandlerFunc, e *echo.Echo, t *testing.T) {
+	for _, tt := range testcases {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, tt.requestUrl, nil)
+			//req := httptest.NewRequest(http.MethodGet, tt.requestUrl, strings.NewReader(tt.requestBody))
+			//req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+
+			err := testHandler(c)
+			if err != nil {
+				t.Errorf("tokenHandler() returned error: %v", err)
+			}
+
+			if rec.Code != tt.expectedStatusCode {
+				t.Errorf("expected status %d, got %d", tt.expectedStatusCode, rec.Code)
+			}
+
+			//if strings.TrimSpace(rec.Body.String()) != tt.expectedResponse {
+				//t.Errorf("expected response %q, got %q", tt.expectedResponse, rec.Body.String())
+			//}
+		})
 	}
 }
