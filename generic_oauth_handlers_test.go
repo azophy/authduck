@@ -33,12 +33,7 @@ func TestTokenHandler(t *testing.T) {
 		expectedStatusCode int
 		expectedResponse   string
 	}{
-		{
-			name:               "Valid request",
-			requestBody:        `{"client_id":"validClientId", "code":"validCode","grant_type":"authorization_code"}`,
-			expectedStatusCode: http.StatusOK,
-			expectedResponse:   `{"id_token":"valid_id_token","access_token":"valid_access_token"}`,
-		},
+		// negative states
 		{
 			name:               "Invalid grant type",
 			requestBody:        `{"client_id":"validClientId", "code":"validCode","grant_type":"invalid_grant_type"}`,
@@ -51,17 +46,51 @@ func TestTokenHandler(t *testing.T) {
 			expectedStatusCode: http.StatusBadRequest,
 			expectedResponse:   "bad request",
 		},
+
+		// authorization code flow
 		{
-			name:               "Client Id Not found",
+			name:               "Authorization Code Flow: Valid request",
+			requestBody:        `{"client_id":"validClientId", "code":"validCode","grant_type":"authorization_code"}`,
+			expectedStatusCode: http.StatusOK,
+			expectedResponse:   `{"id_token":"valid_id_token","access_token":"valid_access_token"}`,
+		},
+		{
+			name:               "Authorization Code Flow: Client Id Not found",
 			requestBody:        `{"client_id":"invalidClientId", "code":"someCode","grant_type":"authorization_code"}`,
 			expectedStatusCode: http.StatusNotFound,
 			expectedResponse:   `{"error":"not found","error_description":"client id-secret pair not found"}`,
 		},
 		{
-			name:               "Code Not found",
+			name:               "Authorization Code Flow: Code Not found",
 			requestBody:        `{"client_id":"validClientId", "code":"someCode","grant_type":"authorization_code"}`,
 			expectedStatusCode: http.StatusNotFound,
 			expectedResponse:   `{"error":"not found","error_description":"client id-secret pair not found"}`,
+		},
+
+		// client credential flow
+		{
+			name:               "Client Credential Flow: Client id registered from other flows",
+			requestBody:        `{"grant_type":"client_credentials","client_id":"validClientId", "client_secret":"someSecret"}`,
+			expectedStatusCode: http.StatusOK,
+			expectedResponse:   `{"id_token":"valid_id_token","access_token":"valid_access_token"}`,
+		},
+		{
+			name:               "Client Credential Flow: Unregistered Client Id should also works",
+			requestBody:        `{"grant_type":"client_credentials","client_id":"someClientId", "client_secret":"someSecret"}`,
+			expectedStatusCode: http.StatusOK,
+			expectedResponse:   `{"id_token":"valid_id_token","access_token":"valid_access_token"}`,
+		},
+		{
+			name:               "Client Credential Flow: Client Id is required",
+			requestBody:        `{"grant_type":"client_credentials"}`,
+			expectedStatusCode: http.StatusBadRequest,
+			expectedResponse:   `{"error":"not found","error_description":"client id field is empty"}`,
+		},
+		{
+			name:               "Client Credential Flow: Client Secret is required",
+			requestBody:        `{"grant_type":"client_credentials","client_id":"someClientId"}`,
+			expectedStatusCode: http.StatusBadRequest,
+			expectedResponse:   `{"error":"not found","error_description":"client secret field is empty"}`,
 		},
 	}
 

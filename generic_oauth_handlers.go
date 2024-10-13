@@ -20,7 +20,7 @@ var (
 		//"implicit",
 		//"refresh_token",
 		//"password",
-		//"client_credentials",
+		"client_credentials",
 		//"urn:ietf:params:oauth:grant-type:device_code",
 		//"urn:openid:params:grant-type:ciba",
 	}
